@@ -1,0 +1,67 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+/*
+  "Paper & Copper" — the same theme tokens as the original Django/React
+  build's index.css. Light is always the default, regardless of the
+  visitor's OS setting. Dark only applies once someone clicks the
+  toggle in the nav bar, which sets data-theme="dark" on <html> and
+  remembers the choice in localStorage (see assets/js/app.js).
+*/
+:root {
+  --paper: #eff1ea;
+  --paper-raised: #ffffff;
+  --ink: #1e211d;
+  --ink-soft: #4c5148;
+  --line: #d6d8cb;
+  --copper: #a85c32;
+  --copper-strong: #7c421f;
+  --teal: #1f5b54;
+  --teal-strong: #163f3a;
+  --teal-bg: #e2eeec;
+  --amber: #9c6a1f;
+  --amber-bg: #f1e6cf;
+  --danger: #a3312a;
+  --danger-bg: #f6dedc;
+  --shadow: 0 1px 2px rgba(30, 33, 29, 0.08), 0 4px 10px rgba(30, 33, 29, 0.05);
+
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --paper: #14160f;
+  --paper-raised: #1c1f16;
+  --ink: #eceee6;
+  --ink-soft: #b7bbae;
+  --line: #333629;
+  --copper: #d98e5f;
+  --copper-strong: #f0b487;
+  --teal: #5fada2;
+  --teal-strong: #8ecac0;
+  --teal-bg: #16302c;
+  --amber: #d3a355;
+  --amber-bg: #332a17;
+  --danger: #e2857e;
+  --danger-bg: #3a201e;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+
+  color-scheme: dark;
+}
+
+/* Theme toggle icon: shows a sun in light mode (click to go dark) and a
+   moon in dark mode (click to go light). Plain CSS, not Tailwind's
+   `hidden`, so it can't be fought by class-order specificity. */
+.theme-icon-moon {
+  display: none;
+}
+
+:root[data-theme="dark"] .theme-icon-sun {
+  display: none;
+}
+
+:root[data-theme="dark"] .theme-icon-moon {
+  display: inline-block;
+}
+
+/* This file is for your main application CSS */

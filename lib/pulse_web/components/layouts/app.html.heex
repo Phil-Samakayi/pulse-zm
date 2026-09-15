@@ -1,0 +1,50 @@
+<header class="sticky top-0 z-10 border-b border-line bg-paper-raised px-4 sm:px-6 lg:px-8">
+  <div class="flex items-center justify-between py-3 text-sm">
+    <div class="flex items-center gap-2">
+      <.link navigate={~p"/"} class="flex items-center gap-1.5 font-extrabold text-ink">
+        <span class="text-lg text-copper" aria-hidden="true">⚡</span> Pulse
+      </.link>
+      <span class="hidden text-ink-soft sm:inline">&middot; Zambia cost-of-living tracker</span>
+    </div>
+    <div class="flex items-center gap-4 font-semibold leading-6 text-ink">
+      <button
+        type="button"
+        id="theme-toggle"
+        aria-label="Toggle dark mode"
+        class="flex h-8 w-8 items-center justify-center rounded-full border border-line text-ink-soft hover:text-copper-strong"
+      >
+        <.icon name="hero-sun" class="theme-icon-sun h-4 w-4" />
+        <.icon name="hero-moon" class="theme-icon-moon h-4 w-4" />
+      </button>
+      <.link
+        :if={assigns[:current_user] && @current_user.is_admin}
+        navigate={~p"/moderation"}
+        class="hover:text-copper-strong"
+      >
+        Moderation
+      </.link>
+      <span :if={assigns[:current_user]} class="font-normal text-ink-soft">
+        {@current_user.username}
+      </span>
+      <.link :if={assigns[:current_user]} href={~p"/users/log_out"} method="delete" class="hover:text-copper-strong">
+        Log out
+      </.link>
+      <.link :if={!assigns[:current_user]} navigate={~p"/users/log_in"} class="hover:text-copper-strong">
+        Log in
+      </.link>
+      <.link
+        :if={!assigns[:current_user]}
+        navigate={~p"/users/register"}
+        class="rounded-full bg-amber-bg px-3 py-1 text-copper-strong hover:brightness-95"
+      >
+        Sign up
+      </.link>
+    </div>
+  </div>
+</header>
+<main class="px-4 py-12 sm:px-6 lg:px-8">
+  <div class="mx-auto max-w-2xl">
+    <.flash_group flash={@flash} />
+    {@inner_content}
+  </div>
+</main>

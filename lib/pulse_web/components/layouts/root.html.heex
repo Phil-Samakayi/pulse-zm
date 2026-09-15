@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en" class="[scrollbar-gutter:stable]">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="csrf-token" content={get_csrf_token()} />
+    <.live_title default="Pulse" suffix=" · Pulse">
+      {assigns[:page_title]}
+    </.live_title>
+    <meta name="description" content="Crowdsourced power, water and market price reports for Zambia." />
+    <script>
+      // Apply a previously-chosen dark theme before the page paints, so
+      // there's no flash of light mode for returning visitors. Light is
+      // the default whenever nothing has been chosen yet.
+      (function () {
+        try {
+          if (localStorage.getItem("pulse-theme") === "dark") {
+            document.documentElement.setAttribute("data-theme", "dark");
+          }
+        } catch (_error) {}
+      })();
+    </script>
+    <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
+    <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}>
+    </script>
+  </head>
+  <body class="bg-paper text-ink">
+    {@inner_content}
+  </body>
+</html>
