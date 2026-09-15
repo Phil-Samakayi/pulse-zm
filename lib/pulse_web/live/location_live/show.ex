@@ -59,11 +59,39 @@ defmodule PulseWeb.LocationLive.Show do
         </.report_list>
       </section>
 
-      <section :if={@current_user} class="mt-10 grid gap-8 sm:grid-cols-2">
-        <div>
-          <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-soft">
+      <section :if={@current_user} class="mt-10">
+        <div class="flex gap-1 border-b border-line">
+          <button
+            type="button"
+            phx-click="switch_report_tab"
+            phx-value-tab="outage"
+            class={[
+              "-mb-px border-b-2 px-4 py-2 text-sm font-semibold",
+              if(@report_tab == "outage",
+                do: "border-copper text-copper-strong",
+                else: "border-transparent text-ink-soft hover:text-ink"
+              )
+            ]}
+          >
             Report an outage
-          </h2>
+          </button>
+          <button
+            type="button"
+            phx-click="switch_report_tab"
+            phx-value-tab="price"
+            class={[
+              "-mb-px border-b-2 px-4 py-2 text-sm font-semibold",
+              if(@report_tab == "price",
+                do: "border-copper text-copper-strong",
+                else: "border-transparent text-ink-soft hover:text-ink"
+              )
+            ]}
+          >
+            Report a price
+          </button>
+        </div>
+
+        <div :if={@report_tab == "outage"} class="mt-6 max-w-sm">
           <.simple_form
             for={@outage_form}
             id="outage_form"
@@ -91,10 +119,7 @@ defmodule PulseWeb.LocationLive.Show do
           </.simple_form>
         </div>
 
-        <div>
-          <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-soft">
-            Report a price
-          </h2>
+        <div :if={@report_tab == "price"} class="mt-6 max-w-sm">
           <.simple_form
             for={@price_form}
             id="price_form"
@@ -203,7 +228,7 @@ defmodule PulseWeb.LocationLive.Show do
 
     {:ok,
      socket
-     |> assign(location: location, page_title: location.name, flagging: nil)
+     |> assign(location: location, page_title: location.name, flagging: nil, report_tab: "outage")
      |> assign_status()
      |> assign_outage_form(Reports.change_outage_report())
      |> assign_price_form(Reports.change_price_report())}
@@ -211,6 +236,10 @@ defmodule PulseWeb.LocationLive.Show do
 
   def handle_info({:report_created, _report}, socket) do
     {:noreply, assign_status(socket)}
+  end
+
+  def handle_event("switch_report_tab", %{"tab" => tab}, socket) do
+    {:noreply, assign(socket, report_tab: tab)}
   end
 
   def handle_event("validate_outage", %{"outage_report" => params}, socket) do
