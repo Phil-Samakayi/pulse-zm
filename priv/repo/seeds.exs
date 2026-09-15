@@ -14,7 +14,6 @@ import Ecto.Query, warn: false
 
 alias Pulse.Repo
 alias Pulse.Accounts
-alias Pulse.Reports
 alias Pulse.Reports.{Location, OutageReport, PriceReport}
 
 defmodule Seeds do

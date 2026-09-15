@@ -2,10 +2,13 @@ import Config
 
 # Configure your database
 config :pulse, Pulse.Repo,
-  database: Path.expand("../pulse_dev.db", __DIR__),
-  pool_size: 5,
+  username: "postgres",
+  password: "postgres",
+  hostname: "localhost",
+  database: "pulse_dev",
   stacktrace: true,
-  show_sensitive_data_on_connection_error: true
+  show_sensitive_data_on_connection_error: true,
+  pool_size: 10
 
 # For development, we disable any cache and enable
 # debugging and code reloading.

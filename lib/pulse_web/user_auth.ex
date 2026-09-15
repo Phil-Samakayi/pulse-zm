@@ -86,12 +86,24 @@ defmodule PulseWeb.UserAuth do
     end
   end
 
-  @doc "on_mount hook: assigns :current_user without requiring one to be signed in."
+  @doc """
+  LiveView `on_mount` hooks, one clause per name (Elixir only allows a
+  single `@doc` per function head, so the four variants are documented
+  here together rather than repeated above each clause):
+
+    * `:mount_current_user` — assigns `:current_user` without requiring
+      one to be signed in.
+    * `:ensure_authenticated` — halts and redirects to the login page
+      unless signed in.
+    * `:redirect_if_user_is_authenticated` — bounces an already-logged-in
+      user away from register/login.
+    * `:ensure_admin` — halts and redirects home unless the current user
+      is an admin.
+  """
   def on_mount(:mount_current_user, _params, session, socket) do
     {:cont, mount_current_user(socket, session)}
   end
 
-  @doc "on_mount hook: halts and redirects to the login page unless signed in."
   def on_mount(:ensure_authenticated, _params, session, socket) do
     socket = mount_current_user(socket, session)
 
@@ -107,7 +119,6 @@ defmodule PulseWeb.UserAuth do
     end
   end
 
-  @doc "on_mount hook: bounces an already-logged-in user away from register/login."
   def on_mount(:redirect_if_user_is_authenticated, _params, session, socket) do
     socket = mount_current_user(socket, session)
 
@@ -118,7 +129,6 @@ defmodule PulseWeb.UserAuth do
     end
   end
 
-  @doc "on_mount hook: halts and redirects home unless the current user is an admin."
   def on_mount(:ensure_admin, _params, session, socket) do
     socket = mount_current_user(socket, session)
 
