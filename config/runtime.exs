@@ -34,8 +34,18 @@ if config_env() == :prod do
   # Uses the OS trust store via :public_key.cacerts_get/0 (OTP 25+), which
   # needs the ca-certificates package installed in the runtime image --
   # already present in this project's Dockerfile.
+  #
+  # Checked loosely (trimmed, case-insensitive, anything but an explicit
+  # "false"/"0"/empty counts as on) so a stray space or "True" in a
+  # dashboard env var field doesn't silently disable SSL.
+  ecto_ssl? =
+    case System.get_env("ECTO_SSL") do
+      nil -> false
+      val -> String.downcase(String.trim(val)) not in ["", "false", "0"]
+    end
+
   maybe_ssl =
-    if System.get_env("ECTO_SSL") == "true" do
+    if ecto_ssl? do
       [ssl: [cacerts: :public_key.cacerts_get()]]
     else
       []
