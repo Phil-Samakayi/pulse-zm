@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pulse
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: pulse_prod
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pulse"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ecto://pulse:${POSTGRES_PASSWORD}@db/pulse_prod
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?set SECRET_KEY_BASE in .env}
+      PHX_HOST: ${PHX_HOST:?set PHX_HOST in .env, e.g. your VM's public IP}
+      PHX_SERVER: "true"
+      PORT: "4000"
+      # No domain/TLS yet -- serve plain http on port 80.
+      # Once you point a domain at this VM and add TLS (e.g. via Caddy),
+      # switch these back to PHX_SCHEME=https / PHX_URL_PORT=443 and put
+      # a reverse proxy in front instead of publishing 80 directly.
+      PHX_SCHEME: "http"
+      PHX_URL_PORT: "80"
+    ports:
+      - "80:4000"
+
+volumes:
+  pgdata:

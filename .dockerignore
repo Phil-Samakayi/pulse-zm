@@ -1,0 +1,16 @@
+_build/
+deps/
+.elixir_ls/
+.git/
+.gitignore
+.env
+*.db
+*.db-shm
+*.db-wal
+node_modules/
+assets/node_modules/
+priv/static/
+test/
+README.md
+Dockerfile
+docker-compose.yml

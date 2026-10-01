@@ -37,8 +37,19 @@ defmodule Pulse.Application do
     :ok
   end
 
+  # Migrations are skipped by default in a release. On platforms where you
+  # can run a one-off command against the release (e.g. SSH'd into the
+  # Oracle VM: `docker compose run --rm app bin/pulse eval
+  # "Pulse.Release.migrate"`), leave RUN_MIGRATIONS_ON_BOOT unset and keep
+  # doing that.
+  #
+  # On platforms with no shell/one-off-command access on the free tier
+  # (e.g. Render's free web services), set RUN_MIGRATIONS_ON_BOOT=true so
+  # the Ecto.Migrator child above runs migrations itself on every boot.
+  # This is safe to leave on permanently: Ecto tracks which migrations
+  # already ran and skips them, so re-running on every restart is a no-op
+  # once the schema is up to date.
   defp skip_migrations?() do
-    # By default, sqlite migrations are run when using a release
-    System.get_env("RELEASE_NAME") != nil
+    System.get_env("RUN_MIGRATIONS_ON_BOOT") != "true"
   end
 end

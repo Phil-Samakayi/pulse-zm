@@ -39,3 +39,6 @@ npm-debug.log
 *.db
 *.db-*
 
+# Local secrets for docker-compose (SECRET_KEY_BASE, POSTGRES_PASSWORD, etc.)
+.env
+

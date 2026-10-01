@@ -30,10 +30,24 @@ if config_env() == :prod do
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6"), do: [:inet6], else: []
 
-  config :pulse, Pulse.Repo,
-    url: database_url,
-    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-    socket_options: maybe_ipv6
+  # Set ECTO_SSL=true for a managed Postgres that requires SSL (e.g. Neon).
+  # Uses the OS trust store via :public_key.cacerts_get/0 (OTP 25+), which
+  # needs the ca-certificates package installed in the runtime image --
+  # already present in this project's Dockerfile.
+  maybe_ssl =
+    if System.get_env("ECTO_SSL") == "true" do
+      [ssl: [cacerts: :public_key.cacerts_get()]]
+    else
+      []
+    end
+
+  config :pulse,
+         Pulse.Repo,
+         [
+           url: database_url,
+           pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+           socket_options: maybe_ipv6
+         ] ++ maybe_ssl
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
   # A default value is used in config/dev.exs and config/test.exs but you
@@ -50,10 +64,18 @@ if config_env() == :prod do
   host = System.get_env("PHX_HOST") || "example.com"
   port = String.to_integer(System.get_env("PORT") || "4000")
 
+  # The URL scheme/port used to build links (in emails, redirects, etc).
+  # Defaults to https/443 for when a real domain + TLS is in front of the
+  # app. While running on the bare Oracle VM IP with no domain yet, the
+  # docker-compose.yml sets PHX_SCHEME=http and PHX_URL_PORT=80 so
+  # generated links point somewhere that actually works.
+  url_scheme = System.get_env("PHX_SCHEME") || "https"
+  url_port = String.to_integer(System.get_env("PHX_URL_PORT") || "443")
+
   config :pulse, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
   config :pulse, PulseWeb.Endpoint,
-    url: [host: host, port: 443, scheme: "https"],
+    url: [host: host, port: url_port, scheme: url_scheme],
     http: [
       # Enable IPv6 and bind on all interfaces.
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
