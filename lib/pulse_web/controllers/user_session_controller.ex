@@ -1,8 +1,28 @@
 defmodule PulseWeb.UserSessionController do
   use PulseWeb, :controller
 
+  import Phoenix.Component, only: [to_form: 2]
+
   alias Pulse.Accounts
   alias PulseWeb.UserAuth
+
+  @doc """
+  Renders the login form. This is a plain controller-rendered page, not a
+  LiveView — the form has no live validation or other behavior that needs
+  a socket, so keeping it on plain HTTP means there's no persistent
+  connection to drop and reconnect while someone is mid-keystroke. (A
+  dropped/reconnecting LiveView socket forces a fresh mount, which replaces
+  the DOM and resets the input to its default value — that's what was
+  causing the login field to lose focus/clear after a few seconds.)
+  """
+  def new(conn, _params) do
+    if conn.assigns[:current_user] do
+      redirect(conn, to: ~p"/")
+    else
+      form = to_form(%{"username" => nil}, as: "user")
+      render(conn, :new, form: form)
+    end
+  end
 
   @doc """
   Handles the login form POST. This has to be a regular controller action,
