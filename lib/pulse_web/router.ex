@@ -38,21 +38,21 @@ defmodule PulseWeb.Router do
   scope "/users", PulseWeb do
     pipe_through :browser
 
-    # A logged-in user visiting this gets bounced to "/" instead.
-    live_session :redirect_if_user_is_authenticated,
-      on_mount: [{PulseWeb.UserAuth, :redirect_if_user_is_authenticated}] do
-      live "/register", UserRegistrationLive, :new
-    end
-
-    # Login is a plain controller-rendered page, not a LiveView — see the
-    # moduledoc on UserSessionController.new/2 for why (it fixes the
-    # input-focus-loss bug caused by the login socket dropping/reconnecting).
-    # Logout is also a real HTTP action, not a socket event — see the
-    # moduledoc on UserSessionController for why login/logout can't be
-    # socket events.
+    # Login and registration are plain controller-rendered pages, not
+    # LiveViews — see the moduledocs on UserSessionController.new/2 and
+    # UserRegistrationController.new/2 for why (both used to be LiveViews
+    # and both hit the same bug: a dropped/reconnected socket remounts
+    # the page from scratch and wipes out whatever had been typed,
+    # stealing focus along with it). Each `new` action redirects an
+    # already-logged-in visitor away itself, replacing the
+    # `:redirect_if_user_is_authenticated` on_mount hook this used to
+    # lean on.
     get "/log_in", UserSessionController, :new
     post "/log_in", UserSessionController, :create
     delete "/log_out", UserSessionController, :delete
+
+    get "/register", UserRegistrationController, :new
+    post "/register", UserRegistrationController, :create
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
