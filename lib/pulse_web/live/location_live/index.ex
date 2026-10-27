@@ -28,10 +28,10 @@ defmodule PulseWeb.LocationLive.Index do
     ~H"""
     <div class="mx-auto max-w-2xl">
       <.header>
-        Pulse — Zambia cost-of-living tracker
+        What's happening in Lusaka
         <:subtitle>
-          Crowdsourced power/water outage and market price reports for Lusaka. Pick a
-          location to see its latest reports, or add one yourself.
+          Power, water and market price reports from people across Lusaka. Open a
+          location for the details, or report what's happening where you are.
         </:subtitle>
       </.header>
 

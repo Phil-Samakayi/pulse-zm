@@ -6,7 +6,7 @@
       </.link>
       <span class="hidden text-ink-soft sm:inline">&middot; Zambia cost-of-living tracker</span>
     </div>
-    <div class="flex items-center gap-4 font-semibold leading-6 text-ink">
+    <div class="flex items-center gap-3 font-semibold leading-6 text-ink sm:gap-4">
       <button
         type="button"
         id="theme-toggle"
@@ -16,19 +16,31 @@
         <.icon name="hero-sun" class="theme-icon-sun h-4 w-4" />
         <.icon name="hero-moon" class="theme-icon-moon h-4 w-4" />
       </button>
+      <%!--
+        On phones the admin link shrinks to an icon, and the username itself
+        is the link to account settings (rather than a separate "Account"
+        link beside plain-text username), so a logged-in admin's nav still
+        fits on one line at ~360px wide.
+      --%>
       <.link
         :if={assigns[:current_user] && @current_user.is_admin}
         navigate={~p"/moderation"}
-        class="hover:text-copper-strong"
+        aria-label="Moderation"
+        title="Moderation"
+        class="flex items-center hover:text-copper-strong"
       >
-        Moderation
+        <.icon name="hero-shield-check" class="h-5 w-5 sm:hidden" />
+        <span class="hidden sm:inline">Moderation</span>
       </.link>
-      <.link :if={assigns[:current_user]} navigate={~p"/users/settings"} class="hover:text-copper-strong">
-        Account
+      <.link
+        :if={assigns[:current_user]}
+        navigate={~p"/users/settings"}
+        title="Account settings"
+        class="flex items-center gap-1.5 hover:text-copper-strong"
+      >
+        <.icon name="hero-user-circle" class="h-5 w-5 flex-none" />
+        <span class="max-w-[8rem] truncate">{@current_user.username}</span>
       </.link>
-      <span :if={assigns[:current_user]} class="font-normal text-ink-soft">
-        {@current_user.username}
-      </span>
       <.link :if={assigns[:current_user]} href={~p"/users/log_out"} method="delete" class="hover:text-copper-strong">
         Log out
       </.link>
