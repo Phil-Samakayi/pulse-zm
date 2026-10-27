@@ -9,6 +9,12 @@ defmodule PulseWeb.LocationLive.Show do
   A location that's still pending review (or was rejected) isn't shown
   to the public — only to admins, who need to be able to open it from
   the moderation queue. Everyone else gets bounced home with a flash.
+
+  Both report forms include a honeypot field (`:website`, see
+  `Pulse.Reports.OutageReport` / `PriceReport`) — hidden from real users
+  via CSS, same pattern as `LocationLive.New`. If it comes back
+  non-empty on submit, the handler pretends the submission succeeded
+  without actually inserting anything.
   """
 
   use PulseWeb, :live_view
@@ -117,6 +123,17 @@ defmodule PulseWeb.LocationLive.Show do
               options={status_options()}
             />
             <.input field={@outage_form[:note]} type="textarea" label="Note (optional)" />
+
+            <div class="absolute -left-[9999px]" aria-hidden="true">
+              <.input
+                field={@outage_form[:website]}
+                type="text"
+                label="Leave this field blank"
+                tabindex="-1"
+                autocomplete="off"
+              />
+            </div>
+
             <:actions>
               <.button phx-disable-with="Submitting..." class="w-full">Submit</.button>
             </:actions>
@@ -146,6 +163,17 @@ defmodule PulseWeb.LocationLive.Show do
             <.input field={@price_form[:unit]} type="text" label="Unit (e.g. 25kg bag, litre)" />
             <.input field={@price_form[:price_kwacha]} type="number" label="Price (ZMW)" step="0.01" />
             <.input field={@price_form[:note]} type="textarea" label="Note (optional)" />
+
+            <div class="absolute -left-[9999px]" aria-hidden="true">
+              <.input
+                field={@price_form[:website]}
+                type="text"
+                label="Leave this field blank"
+                tabindex="-1"
+                autocomplete="off"
+              />
+            </div>
+
             <:actions>
               <.button phx-disable-with="Submitting..." class="w-full">Submit</.button>
             </:actions>
@@ -264,20 +292,26 @@ defmodule PulseWeb.LocationLive.Show do
 
   def handle_event("submit_outage", %{"outage_report" => params}, socket) do
     with_current_user(socket, fn user ->
-      attrs =
-        params
-        |> Map.put("location_id", socket.assigns.location.id)
-        |> Map.put("reported_by_id", user.id)
+      if honeypot_filled?(params) do
+        socket
+        |> put_flash(:info, "Thanks — outage report submitted.")
+        |> assign_outage_form(Reports.change_outage_report())
+      else
+        attrs =
+          params
+          |> Map.put("location_id", socket.assigns.location.id)
+          |> Map.put("reported_by_id", user.id)
 
-      case Reports.create_outage_report(attrs) do
-        {:ok, _report} ->
-          socket
-          |> put_flash(:info, "Thanks — outage report submitted.")
-          |> assign_status()
-          |> assign_outage_form(Reports.change_outage_report())
+        case Reports.create_outage_report(attrs) do
+          {:ok, _report} ->
+            socket
+            |> put_flash(:info, "Thanks — outage report submitted.")
+            |> assign_status()
+            |> assign_outage_form(Reports.change_outage_report())
 
-        {:error, changeset} ->
-          apply_submit_error(socket, changeset, &assign_outage_form/2)
+          {:error, changeset} ->
+            apply_submit_error(socket, changeset, &assign_outage_form/2)
+        end
       end
     end)
   end
@@ -289,23 +323,31 @@ defmodule PulseWeb.LocationLive.Show do
 
   def handle_event("submit_price", %{"price_report" => params}, socket) do
     with_current_user(socket, fn user ->
-      attrs =
-        params
-        |> Map.put("location_id", socket.assigns.location.id)
-        |> Map.put("reported_by_id", user.id)
+      if honeypot_filled?(params) do
+        socket
+        |> put_flash(:info, "Thanks — price report submitted.")
+        |> assign_price_form(Reports.change_price_report())
+      else
+        attrs =
+          params
+          |> Map.put("location_id", socket.assigns.location.id)
+          |> Map.put("reported_by_id", user.id)
 
-      case Reports.create_price_report(attrs) do
-        {:ok, _report} ->
-          socket
-          |> put_flash(:info, "Thanks — price report submitted.")
-          |> assign_status()
-          |> assign_price_form(Reports.change_price_report())
+        case Reports.create_price_report(attrs) do
+          {:ok, _report} ->
+            socket
+            |> put_flash(:info, "Thanks — price report submitted.")
+            |> assign_status()
+            |> assign_price_form(Reports.change_price_report())
 
-        {:error, changeset} ->
-          apply_submit_error(socket, changeset, &assign_price_form/2)
+          {:error, changeset} ->
+            apply_submit_error(socket, changeset, &assign_price_form/2)
+        end
       end
     end)
   end
+
+  defp honeypot_filled?(params), do: (params["website"] || "") != ""
 
   def handle_event("start_flag", %{"type" => type, "id" => id}, socket) do
     {:noreply, assign(socket, flagging: {type, String.to_integer(id)})}

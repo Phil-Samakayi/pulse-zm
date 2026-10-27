@@ -24,6 +24,10 @@ defmodule Pulse.Reports.OutageReport do
     field :is_flagged, :boolean, default: false
     field :flag_reason, :string, default: ""
 
+    # Honeypot — see Pulse.Reports.Location for why this exists and why
+    # it's `virtual: true`. Bound in LocationLive.Show's outage form.
+    field :website, :string, virtual: true
+
     timestamps(type: :utc_datetime, updated_at: false)
   end
 
@@ -36,7 +40,7 @@ defmodule Pulse.Reports.OutageReport do
   """
   def changeset(report, attrs) do
     report
-    |> cast(attrs, [:location_id, :utility, :status, :note, :reported_by_id])
+    |> cast(attrs, [:location_id, :utility, :status, :note, :reported_by_id, :website])
     |> validate_required([:location_id, :utility, :status])
     |> validate_inclusion(:utility, utilities())
     |> validate_inclusion(:status, statuses())

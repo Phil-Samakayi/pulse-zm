@@ -17,6 +17,10 @@ defmodule Pulse.Application do
       {Phoenix.PubSub, name: Pulse.PubSub},
       # Start the Finch HTTP client for sending emails
       {Finch, name: Pulse.Finch},
+      # Rate limiter for report/location submissions — see Pulse.RateLimit
+      # and the anti-spam checks in Pulse.Reports. clean_period controls
+      # how often Hammer sweeps expired counters out of ETS.
+      {Pulse.RateLimit, clean_period: :timer.minutes(10)},
       # Start a worker by calling: Pulse.Worker.start_link(arg)
       # {Pulse.Worker, arg},
       # Start to serve requests, typically the last entry

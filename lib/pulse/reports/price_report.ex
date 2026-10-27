@@ -37,6 +37,10 @@ defmodule Pulse.Reports.PriceReport do
     field :is_flagged, :boolean, default: false
     field :flag_reason, :string, default: ""
 
+    # Honeypot — see Pulse.Reports.Location for why this exists and why
+    # it's `virtual: true`. Bound in LocationLive.Show's price form.
+    field :website, :string, virtual: true
+
     timestamps(type: :utc_datetime, updated_at: false)
   end
 
@@ -50,7 +54,8 @@ defmodule Pulse.Reports.PriceReport do
       :unit,
       :price_kwacha,
       :note,
-      :reported_by_id
+      :reported_by_id,
+      :website
     ])
     |> validate_required([:location_id, :commodity, :unit, :price_kwacha])
     |> validate_inclusion(:commodity, commodities())
