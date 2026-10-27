@@ -19,7 +19,12 @@ config :pulse, Pulse.Repo,
 config :pulse, PulseWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
-  http: [ip: {127, 0, 0, 1}, port: 4000],
+  #
+  # Port 4100, not Phoenix's default 4000: on this Windows machine,
+  # Hyper-V/WSL2 has 3993-4092 reserved as an excluded port range
+  # (`netsh interface ipv4 show excludedportrange protocol=tcp`), so
+  # binding 4000 fails with :eacces even though nothing is using it.
+  http: [ip: {127, 0, 0, 1}, port: 4100],
   check_origin: false,
   code_reloader: true,
   debug_errors: true,

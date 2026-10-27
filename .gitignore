@@ -42,3 +42,5 @@ npm-debug.log
 # Local secrets for docker-compose (SECRET_KEY_BASE, POSTGRES_PASSWORD, etc.)
 .env
 
+# Local copies of files Claude delivered, kept for reference only
+/Claude outputs/
