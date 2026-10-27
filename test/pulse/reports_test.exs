@@ -254,4 +254,74 @@ defmodule Pulse.ReportsTest do
       assert price_id == price.id
     end
   end
+
+  describe "location_summaries/1" do
+    test "picks the newest outage report per utility, electricity first" do
+      location = location_fixture()
+
+      insert_outage!(location, "water", "down", minutes_ago: 30)
+      insert_outage!(location, "electricity", "down", minutes_ago: 90)
+      newest_power = insert_outage!(location, "electricity", "up", minutes_ago: 10)
+
+      summary = Reports.location_summaries([location.id])[location.id]
+
+      assert [%{utility: "electricity", status: "up", id: power_id}, %{utility: "water", status: "down"}] =
+               summary.outages
+
+      assert power_id == newest_power.id
+    end
+
+    test "reports when prices were last updated" do
+      location = location_fixture()
+
+      insert_price!(location, minutes_ago: 120)
+      newest = insert_price!(location, minutes_ago: 5)
+
+      summary = Reports.location_summaries([location.id])[location.id]
+
+      assert summary.outages == []
+      assert summary.prices_updated_at == newest.reported_at
+    end
+
+    test "leaves out locations with no reports, and only looks at the ids asked for" do
+      quiet = location_fixture()
+      busy = location_fixture()
+      not_asked = location_fixture()
+
+      insert_outage!(busy, "electricity", "down", minutes_ago: 1)
+      insert_outage!(not_asked, "electricity", "down", minutes_ago: 1)
+
+      summaries = Reports.location_summaries([quiet.id, busy.id])
+
+      assert Map.keys(summaries) == [busy.id]
+      assert Reports.location_summaries([]) == %{}
+    end
+  end
+
+  defp minutes_ago(minutes) do
+    DateTime.utc_now() |> DateTime.add(-minutes * 60) |> DateTime.truncate(:second)
+  end
+
+  # Inserted directly rather than through create_*_report/1, because those
+  # always stamp reported_at with "now" — these tests need control over it.
+  defp insert_outage!(location, utility, status, minutes_ago: minutes) do
+    %Pulse.Reports.OutageReport{
+      location_id: location.id,
+      utility: utility,
+      status: status,
+      reported_at: minutes_ago(minutes)
+    }
+    |> Pulse.Repo.insert!()
+  end
+
+  defp insert_price!(location, minutes_ago: minutes) do
+    %Pulse.Reports.PriceReport{
+      location_id: location.id,
+      commodity: "mealie_meal",
+      unit: "25kg bag",
+      price_kwacha: Decimal.new("450.00"),
+      reported_at: minutes_ago(minutes)
+    }
+    |> Pulse.Repo.insert!()
+  end
 end

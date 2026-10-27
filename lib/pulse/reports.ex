@@ -128,6 +128,57 @@ defmodule Pulse.Reports do
     |> Enum.reject(&is_nil/1)
   end
 
+  @doc """
+  What the locations list shows on each row, for every location in
+  `location_ids` at once: the latest outage report per utility, and when
+  prices were last reported there. Two queries in total, however many
+  locations there are — not two per location.
+
+  Returns `%{location_id => %{outages: [%OutageReport{}], prices_updated_at: DateTime.t() | nil}}`,
+  with outages in `OutageReport.utilities/0` order (electricity, then
+  water). A location with no reports of either kind is left out of the
+  map entirely.
+
+  The outage query uses Postgres `DISTINCT ON (location_id, utility)`.
+  Ecto puts the distinct columns first in the ORDER BY, so
+  `desc: reported_at` keeps the newest row of each group — the same
+  answer `latest_per(:outage, ...)` gives for a single location, and
+  covered by the existing `[:location_id, :utility, :reported_at]` index.
+  """
+  def location_summaries(location_ids) when is_list(location_ids) do
+    outages =
+      Repo.all(
+        from r in OutageReport,
+          where: r.location_id in ^location_ids,
+          distinct: [r.location_id, r.utility],
+          order_by: [desc: r.reported_at]
+      )
+      |> Enum.group_by(& &1.location_id)
+
+    prices_updated_at =
+      Repo.all(
+        from r in PriceReport,
+          where: r.location_id in ^location_ids,
+          group_by: r.location_id,
+          select: {r.location_id, max(r.reported_at)}
+      )
+      |> Map.new()
+
+    (Map.keys(outages) ++ Map.keys(prices_updated_at))
+    |> Enum.uniq()
+    |> Map.new(fn location_id ->
+      {location_id,
+       %{
+         outages: outages |> Map.get(location_id, []) |> Enum.sort_by(&utility_position/1),
+         prices_updated_at: Map.get(prices_updated_at, location_id)
+       }}
+    end)
+  end
+
+  defp utility_position(%OutageReport{utility: utility}) do
+    Enum.find_index(OutageReport.utilities(), &(&1 == utility))
+  end
+
   ## Outage reports
 
   def create_outage_report(attrs) do

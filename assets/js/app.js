@@ -28,8 +28,16 @@ let liveSocket = new LiveSocket("/live", Socket, {
   params: {_csrf_token: csrfToken}
 })
 
-// Show progress bar on live navigation and form submits
-topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
+// Show progress bar on live navigation and form submits, in the theme's
+// copper rather than topbar's default blue. topbar draws on a <canvas>,
+// which can't take a CSS var() directly, so this reads the current
+// --copper value and is re-run whenever the theme changes (see
+// applyTheme below — dark mode uses a lighter copper).
+function configureTopbar() {
+  const copper = getComputedStyle(document.documentElement).getPropertyValue("--copper").trim()
+  topbar.config({barColors: {0: copper || "#a85c32"}, shadowColor: "rgba(0, 0, 0, .3)"})
+}
+configureTopbar()
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 
@@ -58,6 +66,7 @@ function applyTheme(theme) {
   } else {
     document.documentElement.removeAttribute("data-theme")
   }
+  configureTopbar()
 }
 
 function setTheme(theme) {
