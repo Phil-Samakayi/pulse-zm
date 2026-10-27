@@ -20,6 +20,17 @@ defmodule PulseWeb.Router do
   scope "/", PulseWeb do
     pipe_through :browser
 
+    # Requires login — on_mount bounces an anonymous visitor to the
+    # login page itself. Declared (and therefore matched) before
+    # "/locations/:id" below: Phoenix's router compiles routes in
+    # declaration order, so if the dynamic route came first,
+    # "/locations/new" would be swallowed by it with :id bound to the
+    # literal string "new".
+    live_session :require_user,
+      on_mount: [{PulseWeb.UserAuth, :ensure_authenticated}] do
+      live "/locations/new", LocationLive.New, :new
+    end
+
     # Public pages: current_user is assigned (for the nav bar) but not
     # required — anyone can browse locations and read reports.
     live_session :current_user,

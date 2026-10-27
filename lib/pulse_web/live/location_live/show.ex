@@ -5,6 +5,10 @@ defmodule PulseWeb.LocationLive.Show do
   PubSub topic on mount, so the moment *anyone* submits a report here,
   every browser tab looking at this page updates immediately. That's
   the thing the original React app couldn't do without polling.
+
+  A location that's still pending review (or was rejected) isn't shown
+  to the public — only to admins, who need to be able to open it from
+  the moderation queue. Everyone else gets bounced home with a flash.
   """
 
   use PulseWeb, :live_view
@@ -222,17 +226,28 @@ defmodule PulseWeb.LocationLive.Show do
   def mount(%{"id" => id}, _session, socket) do
     location = Reports.get_location!(id)
 
-    if connected?(socket) do
-      Reports.subscribe(location.id)
-    end
+    if visible?(location, socket.assigns.current_user) do
+      if connected?(socket) do
+        Reports.subscribe(location.id)
+      end
 
-    {:ok,
-     socket
-     |> assign(location: location, page_title: location.name, flagging: nil, report_tab: "outage")
-     |> assign_status()
-     |> assign_outage_form(Reports.change_outage_report())
-     |> assign_price_form(Reports.change_price_report())}
+      {:ok,
+       socket
+       |> assign(location: location, page_title: location.name, flagging: nil, report_tab: "outage")
+       |> assign_status()
+       |> assign_outage_form(Reports.change_outage_report())
+       |> assign_price_form(Reports.change_price_report())}
+    else
+      {:ok,
+       socket
+       |> put_flash(:error, "That location isn't available yet.")
+       |> push_navigate(to: ~p"/")}
+    end
   end
+
+  defp visible?(%{status: "approved"}, _user), do: true
+  defp visible?(_location, %{is_admin: true}), do: true
+  defp visible?(_location, _user), do: false
 
   def handle_info({:report_created, _report}, socket) do
     {:noreply, assign_status(socket)}

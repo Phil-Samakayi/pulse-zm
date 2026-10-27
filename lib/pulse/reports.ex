@@ -15,19 +15,57 @@ defmodule Pulse.Reports do
 
   ## Locations
 
+  @doc "Public listing — approved locations only. Pending/rejected ones never show up here."
   def list_locations do
-    Repo.all(from l in Location, order_by: [asc: l.city, asc: l.name])
+    Repo.all(
+      from l in Location,
+        where: l.status == ^Location.approved(),
+        order_by: [asc: l.city, asc: l.name]
+    )
   end
 
   def get_location!(id), do: Repo.get!(Location, id)
 
+  @doc "Admin/seed path — inserts a pre-approved location directly. Used by seeds.exs."
   def create_location(attrs) do
     %Location{} |> Location.changeset(attrs) |> Repo.insert()
   end
 
-  @doc "For a `phx-change=\"validate\"` handler — a changeset with no insert attempted."
+  @doc "For a `phx-change=\"validate\"` handler on the admin changeset — no insert attempted."
   def change_location(%Location{} = location \\ %Location{}, attrs \\ %{}) do
     Location.changeset(location, attrs)
+  end
+
+  @doc "A regular user proposing a new location. Always lands with status \"pending\"."
+  def submit_location(attrs) do
+    %Location{} |> Location.submission_changeset(attrs) |> Repo.insert()
+  end
+
+  @doc "For the submission form's `phx-change=\"validate\"` handler — no insert attempted."
+  def change_location_submission(%Location{} = location \\ %Location{}, attrs \\ %{}) do
+    Location.submission_changeset(location, attrs)
+  end
+
+  @doc "The moderation queue's list of locations awaiting review, oldest first."
+  def list_pending_locations do
+    Repo.all(
+      from l in Location,
+        where: l.status == ^Location.pending(),
+        order_by: [asc: l.inserted_at],
+        preload: [:submitted_by]
+    )
+  end
+
+  def approve_location(%Location{} = location) do
+    location
+    |> Location.review_changeset(%{"status" => Location.approved()})
+    |> Repo.update()
+  end
+
+  def reject_location(%Location{} = location, reason) do
+    location
+    |> Location.review_changeset(%{"status" => Location.rejected(), "rejection_note" => reason})
+    |> Repo.update()
   end
 
   @doc """

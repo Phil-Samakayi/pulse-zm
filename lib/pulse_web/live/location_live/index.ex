@@ -21,6 +21,13 @@ defmodule PulseWeb.LocationLive.Index do
         </:subtitle>
       </.header>
 
+      <p class="mt-4 text-sm">
+        <.link navigate={~p"/locations/new"} class="font-semibold text-copper-strong hover:underline">
+          Propose a location
+        </.link>
+        not listed here.
+      </p>
+
       <div :if={@grouped == %{}} class="mt-8 text-ink-soft">
         No locations yet.
       </div>
