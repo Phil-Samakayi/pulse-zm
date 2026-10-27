@@ -347,8 +347,6 @@ defmodule PulseWeb.LocationLive.Show do
     end)
   end
 
-  defp honeypot_filled?(params), do: (params["website"] || "") != ""
-
   def handle_event("start_flag", %{"type" => type, "id" => id}, socket) do
     {:noreply, assign(socket, flagging: {type, String.to_integer(id)})}
   end
@@ -377,6 +375,8 @@ defmodule PulseWeb.LocationLive.Show do
       end
     end)
   end
+
+  defp honeypot_filled?(params), do: (params["website"] || "") != ""
 
   defp flag(nil, _kind, _attrs), do: :error
   defp flag(report, :outage, attrs), do: Reports.flag_outage_report(report, attrs)

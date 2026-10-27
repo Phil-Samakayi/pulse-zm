@@ -67,7 +67,7 @@ defmodule PulseWeb.ModerationLive.Index do
               phx-submit="submit_reject"
               class="mt-3 flex items-center gap-2"
             >
-              <input type="hidden" name="id" value={location.id} />
+              <input type="hidden" name="location_id" value={location.id} />
               <input
                 type="text"
                 name="reason"
@@ -182,7 +182,7 @@ defmodule PulseWeb.ModerationLive.Index do
     {:noreply, assign(socket, rejecting: nil)}
   end
 
-  def handle_event("submit_reject", %{"id" => id, "reason" => reason}, socket) do
+  def handle_event("submit_reject", %{"location_id" => id, "reason" => reason}, socket) do
     case find_location(socket, id) do
       nil ->
         {:noreply,
