@@ -130,19 +130,27 @@ if config_env() == :prod do
 
   # ## Configuring the mailer
   #
-  # In production you need to configure the mailer to use a different adapter.
-  # Also, you may need to configure the Swoosh API client of your choice if you
-  # are not using SMTP. Here is an example of the configuration:
+  # Confirmation and password-reset emails go out through Resend
+  # (https://resend.com) once RESEND_API_KEY is set — get a key from
+  # the Resend dashboard and set it as an env var on Render (or
+  # wherever this ends up running). Until then, this falls back to the
+  # Local adapter, same as dev: emails are generated and immediately
+  # discarded (no mailbox route is mounted in prod to view them), which
+  # is harmless since nothing in the app requires email to function —
+  # see Pulse.Accounts' moduledoc on "soft" confirmation.
   #
-  #     config :pulse, Pulse.Mailer,
-  #       adapter: Swoosh.Adapters.Mailgun,
-  #       api_key: System.get_env("MAILGUN_API_KEY"),
-  #       domain: System.get_env("MAILGUN_DOMAIN")
-  #
-  # For this example you need include a HTTP client required by Swoosh API client.
-  # Swoosh supports Hackney and Finch out of the box:
-  #
-  #     config :swoosh, :api_client, Swoosh.ApiClient.Hackney
-  #
-  # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
+  # MAILER_FROM_EMAIL defaults to Resend's onboarding@resend.dev sandbox
+  # sender, which works before any domain is verified on the account.
+  # Set it to something like "pulse@yourdomain.com" once a real domain
+  # is verified in the Resend dashboard, so confirmation/reset emails
+  # come from your own domain instead.
+  if resend_api_key = System.get_env("RESEND_API_KEY") do
+    config :pulse, Pulse.Mailer,
+      adapter: Resend.Swoosh.Adapter,
+      api_key: resend_api_key
+  end
+
+  if mailer_from_email = System.get_env("MAILER_FROM_EMAIL") do
+    config :pulse, :mailer_from, mailer_from_email
+  end
 end

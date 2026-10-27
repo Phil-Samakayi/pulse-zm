@@ -18,6 +18,11 @@
       <.input field={@form[:remember_me]} type="checkbox" label="Keep me logged in" />
     </:actions>
     <:actions>
+      <.link href={~p"/users/reset_password"} class="text-sm font-semibold text-copper-strong hover:underline">
+        Forgot your password?
+      </.link>
+    </:actions>
+    <:actions>
       <.button class="w-full">
         Log in <span aria-hidden="true">→</span>
       </.button>

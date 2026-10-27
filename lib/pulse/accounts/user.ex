@@ -4,6 +4,8 @@ defmodule Pulse.Accounts.User do
 
   schema "users" do
     field :username, :string
+    field :email, :string
+    field :confirmed_at, :utc_datetime
     field :hashed_password, :string, redact: true
     field :password, :string, virtual: true, redact: true
     field :is_admin, :boolean, default: false
@@ -15,16 +17,32 @@ defmodule Pulse.Accounts.User do
   end
 
   @doc """
-  Registration changeset: validates the username, then hashes the password
-  and drops the plaintext from the changeset. Pass `hash_password: false`
-  (used for the live-validating registration form) to skip the actual
-  hashing while still running every other validation — hashing on every
-  keystroke would be wasted CPU.
+  Registration changeset: validates the username and email, then hashes
+  the password and drops the plaintext from the changeset. Pass
+  `hash_password: false` (used for the registration form's initial,
+  unsubmitted changeset) to skip the actual hashing while still running
+  every other validation — hashing on every keystroke would be wasted
+  CPU if this ever grows live validation back.
   """
   def registration_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:username, :password])
+    |> cast(attrs, [:username, :email, :password])
     |> validate_username()
+    |> validate_email()
+    |> validate_password(opts)
+  end
+
+  @doc "For the 'add/update your email' settings form — see `Pulse.Accounts.update_user_email/2`."
+  def email_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:email])
+    |> validate_email()
+  end
+
+  @doc "For the 'set a new password' form — used by both registration and the reset-password flow."
+  def password_changeset(user, attrs, opts \\ []) do
+    user
+    |> cast(attrs, [:password])
     |> validate_password(opts)
   end
 
@@ -37,6 +55,18 @@ defmodule Pulse.Accounts.User do
     )
     |> unsafe_validate_unique(:username, Pulse.Repo)
     |> unique_constraint(:username)
+  end
+
+  defp validate_email(changeset) do
+    changeset
+    |> validate_required([:email])
+    |> validate_format(:email, ~r/^[^\s]+@[^\s]+\.[^\s]+$/,
+      message: "must look like an email address"
+    )
+    |> validate_length(:email, max: 160)
+    |> update_change(:email, &String.downcase/1)
+    |> unsafe_validate_unique(:email, Pulse.Repo)
+    |> unique_constraint(:email)
   end
 
   defp validate_password(changeset, opts) do
@@ -78,4 +108,7 @@ defmodule Pulse.Accounts.User do
     Pbkdf2.no_user_verify()
     false
   end
+
+  @doc "Whether this account's on-file email has been confirmed."
+  def confirmed?(%__MODULE__{confirmed_at: confirmed_at}), do: not is_nil(confirmed_at)
 end

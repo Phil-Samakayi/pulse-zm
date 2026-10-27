@@ -17,6 +17,17 @@ defmodule PulseWeb.Router do
     plug :accepts, ["json"]
   end
 
+  # Gates plain controller routes (not LiveViews — those use the
+  # `:ensure_authenticated` on_mount hook instead) behind a signed-in
+  # user. Delegates to `PulseWeb.UserAuth.require_authenticated_user/2`,
+  # in scope here via the `import` above. Named `:require_login`, not
+  # `:require_authenticated_user` — Phoenix won't let a pipeline share
+  # its name with an imported function, and `require_authenticated_user/2`
+  # is imported right above from `UserAuth`.
+  pipeline :require_login do
+    plug :require_authenticated_user
+  end
+
   scope "/", PulseWeb do
     pipe_through :browser
 
@@ -64,6 +75,26 @@ defmodule PulseWeb.Router do
 
     get "/register", UserRegistrationController, :new
     post "/register", UserRegistrationController, :create
+
+    # Confirming doesn't require being signed in — the link itself is
+    # the proof. No shadowing risk against the authenticated routes
+    # below: different path shapes ("/settings" vs "/confirm/:token"),
+    # not the same shape with one dynamic segment, so declaration order
+    # doesn't matter here the way it does for "/locations/new" above.
+    get "/confirm/:token", UserConfirmationController, :confirm
+
+    get "/reset_password", UserForgotPasswordController, :new
+    post "/reset_password", UserForgotPasswordController, :create
+    get "/reset_password/:token", UserResetPasswordController, :new
+    post "/reset_password/:token", UserResetPasswordController, :create
+  end
+
+  scope "/users", PulseWeb do
+    pipe_through [:browser, :require_login]
+
+    get "/settings", UserSettingsController, :edit
+    put "/settings/email", UserSettingsController, :update_email
+    post "/settings/resend_confirmation", UserSettingsController, :resend_confirmation
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

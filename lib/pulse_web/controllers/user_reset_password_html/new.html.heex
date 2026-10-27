@@ -1,0 +1,18 @@
+<div class="mx-auto max-w-sm">
+  <.header class="text-center">
+    Set a new password
+  </.header>
+
+  <.simple_form
+    for={@form}
+    id="reset_password_form"
+    action={~p"/users/reset_password/#{@token}"}
+    method="post"
+  >
+    <.input field={@form[:password]} type="password" label="New password" required />
+
+    <:actions>
+      <.button class="w-full">Reset password</.button>
+    </:actions>
+  </.simple_form>
+</div>

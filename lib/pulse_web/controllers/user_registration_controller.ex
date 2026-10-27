@@ -3,6 +3,8 @@ defmodule PulseWeb.UserRegistrationController do
 
   import Phoenix.Component, only: [to_form: 2]
 
+  require Logger
+
   alias Pulse.Accounts
   alias Pulse.Accounts.User
 
@@ -24,12 +26,24 @@ defmodule PulseWeb.UserRegistrationController do
     end
   end
 
-  @doc "Handles the registration form POST."
+  @doc """
+  Handles the registration form POST. On success, also fires off a
+  confirmation email — best-effort: a mail-provider hiccup shouldn't
+  block account creation, so a delivery failure is logged, not raised.
+  """
   def create(conn, %{"user" => user_params}) do
     case Accounts.register_user(user_params) do
-      {:ok, _user} ->
+      {:ok, user} ->
+        case Accounts.deliver_user_confirmation_instructions(user, &url(~p"/users/confirm/#{&1}")) do
+          {:ok, _email} ->
+            :ok
+
+          {:error, reason} ->
+            Logger.warning("Could not send confirmation email to a new user: #{inspect(reason)}")
+        end
+
         conn
-        |> put_flash(:info, "Account created — please log in.")
+        |> put_flash(:info, "Account created — check your email to confirm it, then log in.")
         |> redirect(to: ~p"/users/log_in")
 
       {:error, %Ecto.Changeset{} = changeset} ->

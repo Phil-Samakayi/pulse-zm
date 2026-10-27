@@ -23,6 +23,9 @@
       >
         Moderation
       </.link>
+      <.link :if={assigns[:current_user]} navigate={~p"/users/settings"} class="hover:text-copper-strong">
+        Account
+      </.link>
       <span :if={assigns[:current_user]} class="font-normal text-ink-soft">
         {@current_user.username}
       </span>
@@ -45,6 +48,15 @@
 <main class="px-4 py-12 sm:px-6 lg:px-8">
   <div class="mx-auto max-w-2xl">
     <.flash_group flash={@flash} />
+
+    <div
+      :if={assigns[:current_user] && is_nil(@current_user.email)}
+      class="mb-6 rounded-lg border border-amber bg-amber-bg px-4 py-3 text-sm text-copper-strong"
+    >
+      Add an email to your account so you can reset your password if you ever get locked out.
+      <.link navigate={~p"/users/settings"} class="font-semibold underline">Add one now</.link>
+    </div>
+
     {@inner_content}
   </div>
 </main>

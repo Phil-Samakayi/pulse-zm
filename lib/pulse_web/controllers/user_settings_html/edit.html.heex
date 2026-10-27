@@ -1,0 +1,54 @@
+<div class="mx-auto max-w-sm">
+  <.header class="text-center">
+    Account
+    <:subtitle>{@current_user.username}</:subtitle>
+  </.header>
+
+  <div class="mt-8 rounded-lg border border-line p-4 text-sm">
+    <p :if={@current_user.email && Pulse.Accounts.User.confirmed?(@current_user)} class="text-ink-soft">
+      <span class="font-semibold text-ink">{@current_user.email}</span> — confirmed. You can
+      <.link navigate={~p"/users/reset_password"} class="font-semibold text-copper-strong hover:underline">
+        reset your password
+      </.link>
+      by email any time.
+    </p>
+
+    <div :if={@current_user.email && !Pulse.Accounts.User.confirmed?(@current_user)}>
+      <p class="text-ink-soft">
+        <span class="font-semibold text-ink">{@current_user.email}</span> — not confirmed yet.
+        Password reset by email won't work until you confirm it.
+      </p>
+      <.link
+        href={~p"/users/settings/resend_confirmation"}
+        method="post"
+        class="mt-2 inline-block font-semibold text-copper-strong hover:underline"
+      >
+        Resend confirmation email
+      </.link>
+    </div>
+
+    <p :if={!@current_user.email} class="text-ink-soft">
+      No email on file yet — add one below so you can reset your password if you're ever
+      locked out.
+    </p>
+  </div>
+
+  <.simple_form
+    for={@form}
+    id="settings_email_form"
+    action={~p"/users/settings/email"}
+    method="put"
+    class="mt-6"
+  >
+    <.input
+      field={@form[:email]}
+      type="email"
+      label={if @current_user.email, do: "Change email", else: "Add email"}
+      required
+    />
+
+    <:actions>
+      <.button class="w-full">Save</.button>
+    </:actions>
+  </.simple_form>
+</div>

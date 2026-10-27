@@ -1,0 +1,23 @@
+<div class="mx-auto max-w-sm">
+  <.header class="text-center">
+    Forgot your password?
+    <:subtitle>
+      Enter the email on your account and, if it's confirmed, we'll send a link to reset
+      your password.
+    </:subtitle>
+  </.header>
+
+  <.simple_form for={@form} id="forgot_password_form" action={~p"/users/reset_password"} method="post">
+    <.input field={@form[:email]} type="email" label="Email" required />
+
+    <:actions>
+      <.button class="w-full">Send reset instructions</.button>
+    </:actions>
+  </.simple_form>
+
+  <p class="mt-4 text-center text-sm text-ink-soft">
+    <.link href={~p"/users/log_in"} class="font-semibold text-copper-strong hover:underline">
+      Back to log in
+    </.link>
+  </p>
+</div>

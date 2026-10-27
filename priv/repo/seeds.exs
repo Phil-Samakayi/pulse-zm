@@ -17,11 +17,11 @@ alias Pulse.Accounts
 alias Pulse.Reports.{Location, OutageReport, PriceReport}
 
 defmodule Seeds do
-  def get_or_register_user(username, password) do
+  def get_or_register_user(username, email, password) do
     case Accounts.get_user_by_username(username) do
       nil ->
         {:ok, user} =
-          Accounts.register_user(%{"username" => username, "password" => password})
+          Accounts.register_user(%{"username" => username, "email" => email, "password" => password})
 
         user
 
@@ -77,9 +77,13 @@ day = 24 * hour
 
 # A couple of demo accounts so seeded reports have a real author, and you
 # have something to log in with immediately. Password is intentionally
-# simple — local/demo data only.
-reporter = Seeds.get_or_register_user("demo_resident", "pulsedemo123")
-vendor = Seeds.get_or_register_user("demo_vendor", "pulsedemo123")
+# simple — local/demo data only. Emails are placeholder @example.com
+# addresses purely so registration's (now required) email field is
+# satisfied; they're never actually sent to. These accounts stay
+# unconfirmed on purpose — a good way to see the "add/confirm your
+# email" settings flow for yourself without touching a real inbox.
+reporter = Seeds.get_or_register_user("demo_resident", "demo_resident@example.com", "pulsedemo123")
+vendor = Seeds.get_or_register_user("demo_vendor", "demo_vendor@example.com", "pulsedemo123")
 
 already_seeded? = Repo.exists?(from r in OutageReport, where: r.reported_by_id == ^reporter.id)
 
