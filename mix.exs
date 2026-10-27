@@ -58,7 +58,19 @@ defmodule Pulse.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
-      {:pbkdf2_elixir, "~> 2.0"}
+      {:pbkdf2_elixir, "~> 2.0"},
+      {:hammer, "~> 7.0"},
+      # Pinned to the 1.0 release candidate, not 0.4.x: the 0.4 series
+      # depends on hackney (~> 1.9), which in turn needs an old idna —
+      # older than the idna this project's lockfile already has pinned
+      # elsewhere, so `mix deps.get` fails to resolve. The 1.0-rc series
+      # dropped hackney/tesla for req (which rides on the same
+      # finch/mint stack Phoenix/Swoosh already use), sidestepping the
+      # conflict entirely. The Swoosh adapter config (`adapter:
+      # Resend.Swoosh.Adapter, api_key: ...`) is unchanged from 0.4.x.
+      # Pinned to an exact version rather than a range since it's a
+      # pre-release — bump deliberately once resend ships a stable 1.0.
+      {:resend, "1.0.0-rc.3"}
     ]
   end
 
