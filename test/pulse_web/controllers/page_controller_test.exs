@@ -3,6 +3,6 @@ defmodule PulseWeb.PageControllerTest do
 
   test "GET / renders the locations list", %{conn: conn} do
     conn = get(conn, ~p"/")
-    assert html_response(conn, 200) =~ "Pulse — Zambia cost-of-living tracker"
+    assert html_response(conn, 200) =~ "What's happening in Lusaka"
   end
 end
