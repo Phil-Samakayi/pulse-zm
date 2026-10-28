@@ -148,12 +148,12 @@ defmodule Pulse.AccountsTest do
     end
   end
 
-  describe "update_user_email/2" do
+  describe "update_user_email/3" do
     test "sets the email on an account that had none yet" do
       user = legacy_user_fixture()
       refute user.email
 
-      {:ok, updated} = Accounts.update_user_email(user, %{"email" => "added@example.com"})
+      {:ok, updated} = Accounts.update_user_email(user, valid_user_password(), %{"email" => "added@example.com"})
 
       assert updated.email == "added@example.com"
     end
@@ -162,7 +162,7 @@ defmodule Pulse.AccountsTest do
       user = confirmed_user_fixture()
       assert user.confirmed_at
 
-      {:ok, updated} = Accounts.update_user_email(user, %{"email" => unique_user_email()})
+      {:ok, updated} = Accounts.update_user_email(user, valid_user_password(), %{"email" => unique_user_email()})
 
       refute updated.confirmed_at
     end
@@ -170,7 +170,7 @@ defmodule Pulse.AccountsTest do
     test "leaves confirmed_at alone when the email is unchanged" do
       user = confirmed_user_fixture()
 
-      {:ok, updated} = Accounts.update_user_email(user, %{"email" => user.email})
+      {:ok, updated} = Accounts.update_user_email(user, valid_user_password(), %{"email" => user.email})
 
       assert updated.confirmed_at
     end
@@ -179,9 +179,29 @@ defmodule Pulse.AccountsTest do
       %{email: taken} = user_fixture()
       user = user_fixture()
 
-      {:error, changeset} = Accounts.update_user_email(user, %{"email" => taken})
+      {:error, changeset} = Accounts.update_user_email(user, valid_user_password(), %{"email" => taken})
 
       assert "has already been taken" in errors_on(changeset).email
+    end
+
+    test "refuses to change the email without the right current password" do
+      user = confirmed_user_fixture()
+
+      {:error, changeset} =
+        Accounts.update_user_email(user, "not the password", %{"email" => unique_user_email()})
+
+      assert "is not valid" in errors_on(changeset).current_password
+      assert Accounts.get_user!(user.id).email == user.email
+    end
+
+    test "also requires the password when adding a first email" do
+      user = legacy_user_fixture()
+
+      assert {:error, changeset} =
+               Accounts.update_user_email(user, nil, %{"email" => "added@example.com"})
+
+      assert "is not valid" in errors_on(changeset).current_password
+      refute Accounts.get_user!(user.id).email
     end
   end
 

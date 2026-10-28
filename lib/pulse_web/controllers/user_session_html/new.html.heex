@@ -29,7 +29,8 @@
     </:actions>
   </.simple_form>
 
-  <p class="mt-4 text-center text-sm text-ink-soft">
+  <%!-- Local development only — see :show_demo_login in config/dev.exs. --%>
+  <p :if={Application.get_env(:pulse, :show_demo_login, false)} class="mt-4 text-center text-sm text-ink-soft">
     Demo account: <code>demo_resident</code> / <code>pulsedemo123</code>
   </p>
 </div>

@@ -27,7 +27,7 @@ defmodule PulseWeb.UserSettingsControllerTest do
       conn =
         conn
         |> log_in_user(user)
-        |> put(~p"/users/settings/email", %{"user" => %{"email" => "fresh@example.com"}})
+        |> put(~p"/users/settings/email", %{"user" => %{"email" => "fresh@example.com", "current_password" => valid_user_password()}})
 
       assert redirected_to(conn) == ~p"/users/settings"
       assert Accounts.get_user!(user.id).email == "fresh@example.com"
@@ -39,7 +39,7 @@ defmodule PulseWeb.UserSettingsControllerTest do
       conn =
         conn
         |> log_in_user(user)
-        |> put(~p"/users/settings/email", %{"user" => %{"email" => "changed@example.com"}})
+        |> put(~p"/users/settings/email", %{"user" => %{"email" => "changed@example.com", "current_password" => valid_user_password()}})
 
       assert redirected_to(conn) == ~p"/users/settings"
       updated = Accounts.get_user!(user.id)
@@ -53,16 +53,32 @@ defmodule PulseWeb.UserSettingsControllerTest do
       conn =
         conn
         |> log_in_user(user)
-        |> put(~p"/users/settings/email", %{"user" => %{"email" => "not-an-email"}})
+        |> put(~p"/users/settings/email", %{"user" => %{"email" => "not-an-email", "current_password" => valid_user_password()}})
 
       assert html_response(conn, 200) =~ "must look like an email address"
+    end
+
+    test "re-renders with an error and changes nothing for a wrong current password", %{
+      conn: conn
+    } do
+      user = confirmed_user_fixture()
+
+      conn =
+        conn
+        |> log_in_user(user)
+        |> put(~p"/users/settings/email", %{
+          "user" => %{"email" => "hijacked@example.com", "current_password" => "wrong password"}
+        })
+
+      assert html_response(conn, 200) =~ "is not valid"
+      assert Accounts.get_user!(user.id).email == user.email
     end
   end
 
   describe "POST /users/settings/resend_confirmation" do
     test "sends again when there's an unconfirmed email on file", %{conn: conn} do
       user = legacy_user_fixture()
-      {:ok, updated} = Accounts.update_user_email(user, %{"email" => "fresh@example.com"})
+      {:ok, updated} = Accounts.update_user_email(user, valid_user_password(), %{"email" => "fresh@example.com"})
 
       conn = conn |> log_in_user(updated) |> post(~p"/users/settings/resend_confirmation")
 

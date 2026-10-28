@@ -88,3 +88,7 @@ config :phoenix_live_view,
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
+
+# Show the seeded demo account's username/password on the login page
+# (off everywhere else — see config/config.exs).
+config :pulse, :show_demo_login, true

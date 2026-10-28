@@ -14,6 +14,11 @@ defmodule PulseWeb.UserSessionControllerTest do
       assert response =~ "Log in"
     end
 
+    test "doesn't show the demo account's credentials outside local dev", %{conn: conn} do
+      conn = get(conn, ~p"/users/log_in")
+      refute html_response(conn, 200) =~ "pulsedemo123"
+    end
+
     test "redirects an already-logged-in user to the home page", %{conn: conn, user: user} do
       conn = conn |> log_in_user(user) |> get(~p"/users/log_in")
       assert redirected_to(conn) == ~p"/"

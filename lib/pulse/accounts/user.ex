@@ -8,6 +8,7 @@ defmodule Pulse.Accounts.User do
     field :confirmed_at, :utc_datetime
     field :hashed_password, :string, redact: true
     field :password, :string, virtual: true, redact: true
+    field :current_password, :string, virtual: true, redact: true
     field :is_admin, :boolean, default: false
 
     has_many :outage_reports, Pulse.Reports.OutageReport, foreign_key: :reported_by_id
@@ -107,6 +108,24 @@ defmodule Pulse.Accounts.User do
   def valid_password?(_, _) do
     Pbkdf2.no_user_verify()
     false
+  end
+
+  @doc """
+  Adds an error unless `password` is this account's current password.
+  Used to guard sensitive changes (currently: changing the email) so that
+  someone who only has a logged-in session — a browser left signed in
+  at an internet café, say — can't redirect the account's email to an
+  address they control and then use password reset to take it over.
+  Same check `mix phx.gen.auth` puts on its email/password settings.
+  """
+  def validate_current_password(changeset, password) do
+    changeset = cast(changeset, %{current_password: password}, [:current_password])
+
+    if valid_password?(changeset.data, password) do
+      changeset
+    else
+      add_error(changeset, :current_password, "is not valid")
+    end
   end
 
   @doc "Whether this account's on-file email has been confirmed."

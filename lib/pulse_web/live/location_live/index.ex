@@ -160,9 +160,9 @@ defmodule PulseWeb.LocationLive.Index do
       seconds < 60 * 60 -> "#{div(seconds, 60)} min ago"
       seconds < 24 * 60 * 60 -> "#{div(seconds, 60 * 60)} h ago"
       seconds < 7 * 24 * 60 * 60 -> "#{div(seconds, 24 * 60 * 60)} d ago"
-      true -> Calendar.strftime(then, "%d %b")
+      true -> Calendar.strftime(then, "%-d %b")
     end
   end
 
-  defp format_time(%DateTime{} = dt), do: Calendar.strftime(dt, "%d %b %Y, %H:%M UTC")
+  defp format_time(%DateTime{} = dt), do: Calendar.strftime(dt, "%-d %b %Y, %H:%M UTC")
 end

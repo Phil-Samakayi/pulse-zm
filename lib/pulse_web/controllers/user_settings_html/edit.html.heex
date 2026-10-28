@@ -46,6 +46,14 @@
       label={if @current_user.email, do: "Change email", else: "Add email"}
       required
     />
+    <.input
+      field={@form[:current_password]}
+      type="password"
+      label="Current password"
+      value=""
+      autocomplete="current-password"
+      required
+    />
 
     <:actions>
       <.button class="w-full">Save</.button>

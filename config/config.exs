@@ -9,7 +9,11 @@ import Config
 
 config :pulse,
   ecto_repos: [Pulse.Repo],
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime],
+  # Whether the login page shows the seeded demo account's credentials.
+  # Off by default (prod and test); turned on in config/dev.exs only, so
+  # strangers on the live site can't log into the shared demo account.
+  show_demo_login: false
 
 # Configures the endpoint
 config :pulse, PulseWeb.Endpoint,

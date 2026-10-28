@@ -14,7 +14,7 @@ defmodule PulseWeb.UserSettingsController do
   def update_email(conn, %{"user" => user_params}) do
     user = conn.assigns.current_user
 
-    case Accounts.update_user_email(user, user_params) do
+    case Accounts.update_user_email(user, user_params["current_password"], user_params) do
       {:ok, updated_user} ->
         # Best-effort — a mail-provider hiccup here shouldn't block
         # saving the address itself.

@@ -61,13 +61,18 @@ defmodule Pulse.Accounts do
   end
 
   @doc """
-  Sets (or changes) a user's email. If the address actually changes,
-  resets `confirmed_at` so the new address has to be (re)confirmed
-  before it can be used for password reset — a confirmation on the old
-  address shouldn't silently carry over to a new one.
+  Sets (or changes) a user's email, but only if `current_password` is
+  right — see `User.validate_current_password/2` for why. If the address
+  actually changes, resets `confirmed_at` so the new address has to be
+  (re)confirmed before it can be used for password reset — a
+  confirmation on the old address shouldn't silently carry over to a
+  new one.
   """
-  def update_user_email(%User{} = user, attrs) do
-    changeset = User.email_changeset(user, attrs)
+  def update_user_email(%User{} = user, current_password, attrs) do
+    changeset =
+      user
+      |> User.email_changeset(attrs)
+      |> User.validate_current_password(current_password)
 
     changeset =
       if Ecto.Changeset.get_change(changeset, :email) do
