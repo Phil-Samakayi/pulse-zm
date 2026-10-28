@@ -133,11 +133,17 @@ if config_env() == :prod do
   # Confirmation and password-reset emails go out through Resend
   # (https://resend.com) once RESEND_API_KEY is set — get a key from
   # the Resend dashboard and set it as an env var on Render (or
-  # wherever this ends up running). Until then, this falls back to the
-  # Local adapter, same as dev: emails are generated and immediately
-  # discarded (no mailbox route is mounted in prod to view them), which
-  # is harmless since nothing in the app requires email to function —
-  # see Pulse.Accounts' moduledoc on "soft" confirmation.
+  # wherever this ends up running). Until then, emails go to the Logger
+  # adapter: each one is logged (just "New email delivered to <address>",
+  # never the body, so confirm/reset links don't end up in the logs) and
+  # nothing is sent.
+  # That's harmless since nothing in the app requires email to function
+  # — see Pulse.Accounts' moduledoc on "soft" confirmation.
+  #
+  # Not the Local adapter dev uses: config/prod.exs sets
+  # `config :swoosh, local: false`, so Local's in-memory mailbox process
+  # never starts in prod, and every delivery would crash the request
+  # (a signup would create the account and then show an error page).
   #
   # MAILER_FROM_EMAIL defaults to Resend's onboarding@resend.dev sandbox
   # sender, which works before any domain is verified on the account.
@@ -148,6 +154,8 @@ if config_env() == :prod do
     config :pulse, Pulse.Mailer,
       adapter: Resend.Swoosh.Adapter,
       api_key: resend_api_key
+  else
+    config :pulse, Pulse.Mailer, adapter: Swoosh.Adapters.Logger, level: :info
   end
 
   if mailer_from_email = System.get_env("MAILER_FROM_EMAIL") do

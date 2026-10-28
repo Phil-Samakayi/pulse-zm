@@ -2,9 +2,9 @@ defmodule Pulse.Accounts.UserNotifier do
   @moduledoc """
   Builds and sends the two transactional emails Pulse sends: confirm
   your email, and reset your password. Delivered through `Pulse.Mailer`
-  (Swoosh) — the no-op Local adapter in dev/test and until
-  `RESEND_API_KEY` is set in prod, Resend once it is (see
-  `config/runtime.exs`).
+  (Swoosh) — the Local adapter in dev, the Test adapter in test, and in
+  prod the Logger adapter until `RESEND_API_KEY` is set, Resend once it
+  is (see `config/runtime.exs`).
 
   The From address defaults to Resend's own `onboarding@resend.dev`
   sandbox sender, which works before any domain is verified on the
@@ -24,8 +24,16 @@ defmodule Pulse.Accounts.UserNotifier do
       |> subject(subject)
       |> text_body(body)
 
-    with {:ok, _metadata} <- Mailer.deliver(email) do
-      {:ok, email}
+    # Email is best-effort everywhere it's used (see the callers), so a
+    # mail adapter that's down or misconfigured comes back as an error
+    # tuple the caller can log, instead of an exit that crashes the
+    # request after the account change it belongs to has already saved.
+    try do
+      with {:ok, _metadata} <- Mailer.deliver(email) do
+        {:ok, email}
+      end
+    catch
+      :exit, reason -> {:error, {:mailer_unavailable, reason}}
     end
   end
 
