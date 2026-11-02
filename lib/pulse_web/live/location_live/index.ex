@@ -17,12 +17,11 @@ defmodule PulseWeb.LocationLive.Index do
 
   use PulseWeb, :live_view
 
-  alias Pulse.Reports
-  alias Pulse.Reports.{Location, OutageReport}
+  import PulseWeb.ReportFormat,
+    only: [utility_label: 1, status_word: 1, status_class: 2, time_ago: 2, full_time: 1]
 
-  # A report older than this is shown muted rather than in red/green —
-  # "power out" from three days ago says little about right now.
-  @stale_after_seconds 24 * 60 * 60
+  alias Pulse.Reports
+  alias Pulse.Reports.Location
 
   def render(assigns) do
     ~H"""
@@ -85,13 +84,13 @@ defmodule PulseWeb.LocationLive.Index do
   defp row_summary(assigns) do
     ~H"""
     <p class="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-ink-soft">
-      <span :for={report <- @summary.outages} title={format_time(report.reported_at)}>
+      <span :for={report <- @summary.outages} title={full_time(report.reported_at)}>
         <span class={["font-medium", status_class(report, @now)]}>
           {utility_label(report.utility)} {status_word(report.status)}
         </span>
         · {time_ago(report.reported_at, @now)}
       </span>
-      <span :if={@summary.prices_updated_at} title={format_time(@summary.prices_updated_at)}>
+      <span :if={@summary.prices_updated_at} title={full_time(@summary.prices_updated_at)}>
         Prices · {time_ago(@summary.prices_updated_at, @now)}
       </span>
     </p>
@@ -136,33 +135,4 @@ defmodule PulseWeb.LocationLive.Index do
   defp group_label("residential"), do: "Residential areas"
   defp group_label("market"), do: "Markets"
   defp group_label(other), do: other
-
-  defp utility_label(utility),
-    do: if(utility == OutageReport.electricity(), do: "Power", else: "Water")
-
-  defp status_word(status), do: if(status == OutageReport.up(), do: "on", else: "out")
-
-  defp status_class(report, now) do
-    cond do
-      stale?(report.reported_at, now) -> "text-ink-soft"
-      report.status == OutageReport.up() -> "text-teal"
-      true -> "text-danger"
-    end
-  end
-
-  defp stale?(reported_at, now), do: DateTime.diff(now, reported_at) > @stale_after_seconds
-
-  defp time_ago(%DateTime{} = then, now) do
-    seconds = max(DateTime.diff(now, then), 0)
-
-    cond do
-      seconds < 60 -> "just now"
-      seconds < 60 * 60 -> "#{div(seconds, 60)} min ago"
-      seconds < 24 * 60 * 60 -> "#{div(seconds, 60 * 60)} h ago"
-      seconds < 7 * 24 * 60 * 60 -> "#{div(seconds, 24 * 60 * 60)} d ago"
-      true -> Calendar.strftime(then, "%-d %b")
-    end
-  end
-
-  defp format_time(%DateTime{} = dt), do: Calendar.strftime(dt, "%-d %b %Y, %H:%M UTC")
 end
