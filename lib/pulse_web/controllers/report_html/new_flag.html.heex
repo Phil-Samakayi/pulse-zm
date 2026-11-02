@@ -1,0 +1,46 @@
+<div class="mx-auto max-w-sm">
+  <.back_to_location location={@location} />
+
+  <.header class="mt-4">
+    Flag a report
+    <:subtitle>
+      If this report looks wrong, flag it and a moderator will take a look.
+    </:subtitle>
+  </.header>
+
+  <div class="mt-6 rounded-lg border border-line bg-paper-raised px-4 py-3">
+    <p class="font-medium">
+      {if @type == "outage", do: outage_short(@report), else: price_summary(@report)}
+    </p>
+    <p class="mt-1 text-xs text-ink-soft">
+      {reporter_name(@report)} · {full_time(@report.reported_at)}
+    </p>
+    <p :if={@report.note != ""} class="mt-1 text-sm text-ink">{@report.note}</p>
+  </div>
+
+  <.simple_form
+    for={@form}
+    id="flag_form"
+    action={~p"/locations/#{@location.id}/flag/#{@type}/#{@report.id}"}
+    method="post"
+  >
+    <.input
+      field={@form[:reason]}
+      type="text"
+      label="What's wrong with it? (optional)"
+      maxlength="280"
+    />
+
+    <:actions>
+      <.button class="w-full">Flag for review</.button>
+    </:actions>
+    <:actions>
+      <.link
+        navigate={~p"/locations/#{@location.id}"}
+        class="mx-auto text-sm font-semibold text-ink-soft hover:underline"
+      >
+        Cancel
+      </.link>
+    </:actions>
+  </.simple_form>
+</div>

@@ -1,0 +1,45 @@
+<div class="mx-auto max-w-sm">
+  <.back_to_location location={@location} />
+
+  <.header class="mt-4">
+    Report a price
+    <:subtitle>What something costs at {@location.name} today.</:subtitle>
+  </.header>
+
+  <.simple_form
+    for={@form}
+    id="price_form"
+    action={~p"/locations/#{@location.id}/prices"}
+    method="post"
+  >
+    <.choice_group field={@form[:commodity]} label="What" options={commodity_options()} />
+    <.input
+      field={@form[:commodity_other]}
+      type="text"
+      label="If “Other”, what is it?"
+      maxlength="80"
+    />
+    <.input
+      field={@form[:unit]}
+      type="text"
+      label="Unit"
+      placeholder="e.g. 25kg bag, 2 litres, bucket"
+      required
+    />
+    <.input
+      field={@form[:price_kwacha]}
+      type="number"
+      label="Price (K)"
+      step="0.01"
+      min="0"
+      inputmode="decimal"
+      required
+    />
+    <.input field={@form[:note]} type="textarea" label="Note (optional)" maxlength="280" />
+    <.honeypot field={@form[:website]} />
+
+    <:actions>
+      <.button class="w-full">Submit price</.button>
+    </:actions>
+  </.simple_form>
+</div>

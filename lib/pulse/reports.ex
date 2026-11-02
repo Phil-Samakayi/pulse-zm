@@ -36,6 +36,18 @@ defmodule Pulse.Reports do
 
   def get_location!(id), do: Repo.get!(Location, id)
 
+  @doc "Like `get_location!/1`, but `nil` instead of raising — for ids that come from a URL."
+  def get_location(id), do: Repo.get(Location, id)
+
+  @doc """
+  Whether `user` (`nil` for a logged-out visitor) may see — and report at —
+  `location`. Approved locations are public; pending and rejected ones are
+  admin-only, so an admin can still open them from the moderation queue.
+  """
+  def visible_to?(%Location{status: "approved"}, _user), do: true
+  def visible_to?(%Location{}, %{is_admin: true}), do: true
+  def visible_to?(%Location{}, _user), do: false
+
   @doc "Admin/seed path — inserts a pre-approved location directly. Used by seeds.exs."
   def create_location(attrs) do
     %Location{} |> Location.changeset(attrs) |> Repo.insert()
@@ -231,6 +243,9 @@ defmodule Pulse.Reports do
     )
   end
 
+  @doc "An outage report by id (with its reporter), or `nil`."
+  def get_outage_report(id), do: OutageReport |> Repo.get(id) |> Repo.preload(:reported_by)
+
   def flag_outage_report(%OutageReport{} = report, attrs) do
     result =
       report
@@ -293,6 +308,9 @@ defmodule Pulse.Reports do
             r.commodity == ^commodity and r.reported_at >= ^cutoff
     )
   end
+
+  @doc "A price report by id (with its reporter), or `nil`."
+  def get_price_report(id), do: PriceReport |> Repo.get(id) |> Repo.preload(:reported_by)
 
   def flag_price_report(%PriceReport{} = report, attrs) do
     result =

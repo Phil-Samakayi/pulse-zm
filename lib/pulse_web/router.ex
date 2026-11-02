@@ -97,6 +97,22 @@ defmodule PulseWeb.Router do
     post "/settings/resend_confirmation", UserSettingsController, :resend_confirmation
   end
 
+  # Reporting and flagging — plain controller pages and form POSTs rather
+  # than LiveView events, so they work even when a page's live connection
+  # can't stay up (see PulseWeb.LocationLive.Show's moduledoc). Three or
+  # more path segments, so none of these can be shadowed by (or shadow)
+  # the two-segment live "/locations/:id" route above.
+  scope "/locations/:location_id", PulseWeb do
+    pipe_through [:browser, :require_login]
+
+    get "/report/outage", ReportController, :new_outage
+    post "/outages", ReportController, :create_outage
+    get "/report/price", ReportController, :new_price
+    post "/prices", ReportController, :create_price
+    get "/flag/:type/:report_id", ReportController, :new_flag
+    post "/flag/:type/:report_id", ReportController, :create_flag
+  end
+
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:pulse, :dev_routes) do
     # If you want to use the LiveDashboard in production, you should put

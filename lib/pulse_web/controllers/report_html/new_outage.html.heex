@@ -1,0 +1,28 @@
+<div class="mx-auto max-w-sm">
+  <.back_to_location location={@location} />
+
+  <.header class="mt-4">
+    Report power or water
+    <:subtitle>
+      At {@location.name}. A short note helps others, such as when it went off or which
+      streets are affected.
+    </:subtitle>
+  </.header>
+
+  <.simple_form
+    for={@form}
+    id="outage_form"
+    action={~p"/locations/#{@location.id}/outages"}
+    method="post"
+  >
+    <input type="hidden" name="source" value="form" />
+    <.choice_group field={@form[:utility]} label="What" options={utility_options()} />
+    <.choice_group field={@form[:status]} label="Is it" options={status_options()} />
+    <.input field={@form[:note]} type="textarea" label="Note (optional)" maxlength="280" />
+    <.honeypot field={@form[:website]} />
+
+    <:actions>
+      <.button class="w-full">Submit report</.button>
+    </:actions>
+  </.simple_form>
+</div>
