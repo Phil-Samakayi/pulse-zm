@@ -177,6 +177,73 @@ defmodule PulseWeb.CoreComponents do
   end
 
   @doc """
+  The page's success/error messages ("Welcome back!", "Thanks — your
+  report is in."), rendered in the *root* layout rather than inside a
+  LiveView.
+
+  Why not `flash_group/1`, which lives in the app layout: on a host where
+  the live connection keeps dropping (Render's free plan), the LiveView
+  remounts over and over, and every remount renders the same flash again
+  — so a message could never be closed, and its close button (a LiveView
+  event) did nothing anyway while disconnected. The root layout sits
+  outside the LiveView, so LiveView never re-renders it, and the close
+  button here is plain JavaScript (`data-flash-close`, handled in
+  `assets/js/app.js`), which works with or without a connection. Success
+  messages also hide themselves after a few seconds.
+
+  Sits just below the header instead of over it, so the nav stays usable.
+  """
+  attr :flash, :map, required: true
+
+  def page_flash(assigns) do
+    ~H"""
+    <div
+      id="page-flash"
+      class="pointer-events-none fixed inset-x-2 top-16 z-50 flex flex-col items-end gap-2"
+    >
+      <.page_flash_item kind={:info} title={gettext("Success!")} flash={@flash} />
+      <.page_flash_item kind={:error} title={gettext("Error!")} flash={@flash} />
+    </div>
+    """
+  end
+
+  attr :kind, :atom, values: [:info, :error], required: true
+  attr :title, :string, required: true
+  attr :flash, :map, required: true
+
+  defp page_flash_item(assigns) do
+    ~H"""
+    <div
+      :if={msg = Phoenix.Flash.get(@flash, @kind)}
+      role="alert"
+      data-flash={@kind}
+      class={[
+        "pointer-events-auto relative w-full max-w-sm rounded-lg p-3 pr-10 shadow-md ring-1",
+        @kind == :info && "bg-teal-bg text-teal-strong ring-teal",
+        @kind == :error && "bg-danger-bg text-danger ring-danger"
+      ]}
+    >
+      <p class="flex items-center gap-1.5 text-sm font-semibold leading-6">
+        <.icon
+          name={if @kind == :info, do: "hero-information-circle-mini", else: "hero-exclamation-circle-mini"}
+          class="h-4 w-4"
+        />
+        {@title}
+      </p>
+      <p class="mt-1 text-sm leading-5">{msg}</p>
+      <button
+        type="button"
+        data-flash-close
+        class="group absolute right-1 top-1 p-2"
+        aria-label={gettext("close")}
+      >
+        <.icon name="hero-x-mark-solid" class="h-5 w-5 opacity-40 group-hover:opacity-70" />
+      </button>
+    </div>
+    """
+  end
+
+  @doc """
   Renders a simple form.
 
   ## Examples

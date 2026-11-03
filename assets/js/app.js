@@ -50,6 +50,20 @@ liveSocket.connect()
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket
 
+// Page messages ("Welcome back!", "Thanks — your report is in.") from
+// CoreComponents.page_flash/1. Rendered outside any LiveView, so this
+// plain-JS close works even when the live connection is down. Success
+// messages also hide themselves after a few seconds; errors stay until
+// closed, so they aren't missed.
+document.addEventListener("click", (event) => {
+  const close = event.target.closest("[data-flash-close]")
+  if (close) close.closest("[data-flash]").remove()
+})
+
+document.querySelectorAll('[data-flash="info"]').forEach((el) => {
+  setTimeout(() => el.remove(), 6000)
+})
+
 // Theme toggle. Light is the default; dark only applies once someone
 // clicks the button, and the choice is remembered in localStorage (the
 // inline script in root.html.heex re-applies it on the next visit,

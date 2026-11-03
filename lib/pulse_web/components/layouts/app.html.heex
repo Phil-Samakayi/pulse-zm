@@ -59,7 +59,13 @@
 </header>
 <main class="px-4 py-12 sm:px-6 lg:px-8">
   <div class="mx-auto max-w-2xl">
-    <.flash_group flash={@flash} />
+    <%!--
+      Success/error messages are shown by `page_flash/1` in the root
+      layout instead (see its doc in CoreComponents). An empty map here
+      keeps only the "reconnecting" notices, which need to be inside the
+      LiveView to react to its connection state.
+    --%>
+    <.flash_group flash={%{}} />
 
     <div
       :if={assigns[:current_user] && is_nil(@current_user.email)}
