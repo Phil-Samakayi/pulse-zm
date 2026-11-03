@@ -113,6 +113,7 @@ defmodule PulseWeb.LocationLive.Show do
         <.report_list
           reports={@latest_outages}
           type="outage"
+          runs={@runs}
           location={@location}
           current_user={@current_user}
           now={@now}
@@ -146,6 +147,7 @@ defmodule PulseWeb.LocationLive.Show do
 
   attr :reports, :list, required: true
   attr :type, :string, required: true
+  attr :runs, :map, default: %{}, doc: "outage runs by utility, from Reports.outage_runs/1"
   attr :location, :any, required: true
   attr :current_user, :any, required: true
   attr :now, DateTime, required: true
@@ -164,18 +166,82 @@ defmodule PulseWeb.LocationLive.Show do
             {reporter_name(report)} · {reported_when(report.reported_at, @now)}
             <span :if={report.is_flagged} class="text-amber">· flagged for review</span>
           </p>
+          <.run_line :if={@type == "outage"} run={@runs[report.utility]} now={@now} />
           <p :if={report.note != ""} class="mt-1 text-sm text-ink">{report.note}</p>
         </div>
 
-        <.link
-          :if={@current_user && !report.is_flagged}
-          href={~p"/locations/#{@location.id}/flag/#{@type}/#{report.id}"}
-          class="-mr-2 shrink-0 rounded px-2 py-1 text-xs text-ink-soft hover:bg-paper hover:text-copper-strong"
-        >
-          Flag
-        </.link>
+        <div :if={@current_user} class="-mr-2 flex shrink-0 flex-col items-end gap-1">
+          <.me_too
+            :if={@type == "outage"}
+            report={report}
+            run={@runs[report.utility]}
+            location={@location}
+            current_user={@current_user}
+          />
+          <.link
+            :if={!report.is_flagged}
+            href={~p"/locations/#{@location.id}/flag/#{@type}/#{report.id}"}
+            class="rounded px-2 py-1 text-xs text-ink-soft hover:bg-paper hover:text-copper-strong"
+          >
+            Flag
+          </.link>
+        </div>
       </li>
     </ul>
+    """
+  end
+
+  # "Since Monday 06:46 · reported by 14 people" under the latest outage
+  # report — only when there's more to say than the report itself does.
+  attr :run, :map, default: nil
+  attr :now, DateTime, required: true
+
+  defp run_line(%{run: nil} = assigns), do: ~H""
+
+  defp run_line(assigns) do
+    ~H"""
+    <p
+      :if={@run.people > 0 and (@run.people >= 2 or @run.since != @run.latest_at)}
+      class="mt-1 text-xs text-ink-soft"
+    >
+      Since {reported_when(@run.since, @now)} · reported by {people(@run.people)}
+    </p>
+    """
+  end
+
+  # "Me too": one tap re-reports the current status, adding this user to
+  # the run's count. A tap-only form like the quick buttons above, so it
+  # works without the live connection. Shown as "You reported this" once
+  # the user is already counted.
+  attr :report, :any, required: true
+  attr :run, :map, default: nil
+  attr :location, :any, required: true
+  attr :current_user, :any, required: true
+
+  defp me_too(assigns) do
+    ~H"""
+    <span
+      :if={@run && MapSet.member?(@run.reporter_ids, @current_user.id)}
+      class="px-2 py-1 text-xs text-ink-soft"
+    >
+      You reported this
+    </span>
+    <.form
+      :if={!(@run && MapSet.member?(@run.reporter_ids, @current_user.id))}
+      for={%{}}
+      as={:outage_report}
+      action={~p"/locations/#{@location.id}/outages"}
+      method="post"
+    >
+      <input type="hidden" name="outage_report[utility]" value={@report.utility} />
+      <input type="hidden" name="outage_report[status]" value={@report.status} />
+      <button
+        type="submit"
+        class="rounded-full border border-line px-3 py-1 text-xs font-semibold text-ink hover:border-copper hover:text-copper-strong"
+      >
+        Me too
+      </button>
+    </.form>
     """
   end
 
@@ -212,9 +278,12 @@ defmodule PulseWeb.LocationLive.Show do
   defp assign_status(socket) do
     status = Reports.location_status(socket.assigns.location)
 
+    location_id = socket.assigns.location.id
+
     assign(socket,
       latest_outages: status.latest_outages,
       latest_prices: status.latest_prices,
+      runs: Map.get(Reports.outage_runs([location_id]), location_id, %{}),
       now: DateTime.utc_now()
     )
   end

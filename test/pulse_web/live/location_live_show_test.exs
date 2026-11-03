@@ -63,6 +63,39 @@ defmodule PulseWeb.LocationLive.ShowTest do
     assert html =~ "Report a price"
   end
 
+  test "shows how long the status has held and how many people reported it", %{
+    conn: conn,
+    location: location
+  } do
+    {:ok, _} =
+      Reports.create_outage_report(
+        valid_outage_attrs(
+          location_id: location.id,
+          reported_by_id: user_fixture().id,
+          utility: "electricity",
+          status: "down"
+        )
+      )
+
+    {:ok, _view, html} = live(conn, ~p"/locations/#{location.id}")
+
+    assert html =~ "Since"
+    assert html =~ "reported by 2 people"
+  end
+
+  test "offers Me too to someone who hasn't reported, and not to the reporter", %{
+    conn: conn,
+    location: location,
+    reporter: reporter
+  } do
+    {:ok, _view, html} = conn |> log_in_user(user_fixture()) |> live(~p"/locations/#{location.id}")
+    assert html =~ "Me too"
+
+    {:ok, _view, html} = build_conn() |> log_in_user(reporter) |> live(~p"/locations/#{location.id}")
+    assert html =~ "You reported this"
+    refute html =~ "Me too"
+  end
+
   test "a pending location isn't shown to a regular user", %{conn: conn} do
     pending = Reports.submit_location(valid_location_attrs(submitted_by_id: user_fixture().id))
     {:ok, pending} = pending
