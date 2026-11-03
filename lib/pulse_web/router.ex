@@ -28,6 +28,13 @@ defmodule PulseWeb.Router do
     plug :require_authenticated_user
   end
 
+  # Admin-only controller routes. Same naming rule as :require_login: not
+  # `:require_admin`, which would clash with the imported
+  # `UserAuth.require_admin/2` plug it runs.
+  pipeline :admins_only do
+    plug :require_admin
+  end
+
   # Proposing a location — a plain controller page rather than a
   # LiveView, so it works even when the live connection can't stay up
   # (see PulseWeb.LocationLive.Show's moduledoc). Declared (and therefore
@@ -51,12 +58,6 @@ defmodule PulseWeb.Router do
       on_mount: [{PulseWeb.UserAuth, :mount_current_user}] do
       live "/", LocationLive.Index, :index
       live "/locations/:id", LocationLive.Show, :show
-    end
-
-    # Admin-only.
-    live_session :require_admin,
-      on_mount: [{PulseWeb.UserAuth, :ensure_admin}] do
-      live "/moderation", ModerationLive.Index, :index
     end
   end
 
@@ -98,6 +99,18 @@ defmodule PulseWeb.Router do
     get "/settings", UserSettingsController, :edit
     put "/settings/email", UserSettingsController, :update_email
     post "/settings/resend_confirmation", UserSettingsController, :resend_confirmation
+  end
+
+  # Admin-only moderation queue — a plain controller page with form POSTs,
+  # like the reporting pages below (see PulseWeb.ModerationController).
+  scope "/moderation", PulseWeb do
+    pipe_through [:browser, :require_login, :admins_only]
+
+    get "/", ModerationController, :index
+    post "/locations/:id/approve", ModerationController, :approve
+    get "/locations/:id/reject", ModerationController, :new_reject
+    post "/locations/:id/reject", ModerationController, :reject
+    post "/flags/:type/:id/clear", ModerationController, :clear_flag
   end
 
   # Reporting and flagging — plain controller pages and form POSTs rather

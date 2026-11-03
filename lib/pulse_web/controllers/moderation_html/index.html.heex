@@ -1,0 +1,105 @@
+<div class="mx-auto max-w-2xl">
+  <.header>
+    Moderation queue
+    <:subtitle>Pending location submissions, and reports the community has flagged.</:subtitle>
+  </.header>
+
+  <section class="mt-8">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-soft">
+      Pending locations ({length(@pending_locations)})
+    </h2>
+
+    <p :if={@pending_locations == []} class="mt-2 text-sm text-ink-soft">Nothing pending.</p>
+
+    <ul
+      :if={@pending_locations != []}
+      class="mt-2 divide-y divide-line rounded-lg border border-line"
+    >
+      <li
+        :for={location <- @pending_locations}
+        class="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 px-4 py-3"
+      >
+        <div class="min-w-0">
+          <.link
+            href={~p"/locations/#{location.id}"}
+            class="font-medium text-ink hover:text-copper-strong hover:underline"
+          >
+            {location.name}
+          </.link>
+          <p class="text-sm text-ink-soft">
+            {location.city} · {group_label(location.location_type)}
+          </p>
+          <p class="mt-1 text-xs text-ink-soft">
+            Proposed by {submitter_name(location)} · {full_time(location.inserted_at)}
+          </p>
+        </div>
+
+        <div class="flex shrink-0 items-center gap-1">
+          <.post_button action={~p"/moderation/locations/#{location.id}/approve"} class="text-teal">
+            Approve
+          </.post_button>
+          <.link
+            href={~p"/moderation/locations/#{location.id}/reject"}
+            class="rounded px-2 py-1 text-sm font-semibold text-danger hover:underline"
+          >
+            Reject
+          </.link>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <section class="mt-10">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-soft">
+      Flagged outage reports ({length(@flagged.outages)})
+    </h2>
+
+    <p :if={@flagged.outages == []} class="mt-2 text-sm text-ink-soft">Nothing flagged.</p>
+
+    <ul :if={@flagged.outages != []} class="mt-2 divide-y divide-line rounded-lg border border-line">
+      <li
+        :for={report <- @flagged.outages}
+        class="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 px-4 py-3"
+      >
+        <div class="min-w-0">
+          <p class="font-medium">{report.location.name}: {outage_short(report)}</p>
+          <p class="mt-1 text-xs text-ink-soft">
+            {reporter_name(report)} · {full_time(report.reported_at)}
+          </p>
+          <p :if={report.note != ""} class="mt-1 text-sm text-ink">{report.note}</p>
+          <p class="mt-1 text-sm text-amber">Flag reason: {blank_dash(report.flag_reason)}</p>
+        </div>
+        <.post_button action={~p"/moderation/flags/outage/#{report.id}/clear"} class="text-ink">
+          Clear flag
+        </.post_button>
+      </li>
+    </ul>
+  </section>
+
+  <section class="mt-10">
+    <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-soft">
+      Flagged price reports ({length(@flagged.prices)})
+    </h2>
+
+    <p :if={@flagged.prices == []} class="mt-2 text-sm text-ink-soft">Nothing flagged.</p>
+
+    <ul :if={@flagged.prices != []} class="mt-2 divide-y divide-line rounded-lg border border-line">
+      <li
+        :for={report <- @flagged.prices}
+        class="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 px-4 py-3"
+      >
+        <div class="min-w-0">
+          <p class="font-medium">{report.location.name}: {price_summary(report)}</p>
+          <p class="mt-1 text-xs text-ink-soft">
+            {reporter_name(report)} · {full_time(report.reported_at)}
+          </p>
+          <p :if={report.note != ""} class="mt-1 text-sm text-ink">{report.note}</p>
+          <p class="mt-1 text-sm text-amber">Flag reason: {blank_dash(report.flag_reason)}</p>
+        </div>
+        <.post_button action={~p"/moderation/flags/price/#{report.id}/clear"} class="text-ink">
+          Clear flag
+        </.post_button>
+      </li>
+    </ul>
+  </section>
+</div>

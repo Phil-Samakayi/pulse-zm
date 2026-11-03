@@ -174,6 +174,22 @@ defmodule PulseWeb.UserAuth do
     end
   end
 
+  @doc """
+  Plug: requires the signed-in user to be an admin; anyone else is sent
+  home. Run after `require_authenticated_user/2`, so a logged-out visitor
+  is asked to log in first instead of being bounced home.
+  """
+  def require_admin(conn, _opts) do
+    if conn.assigns[:current_user] && conn.assigns.current_user.is_admin do
+      conn
+    else
+      conn
+      |> put_flash(:error, "You don't have access to that page.")
+      |> redirect(to: ~p"/")
+      |> halt()
+    end
+  end
+
   defp maybe_store_return_to(%{method: "GET"} = conn) do
     put_session(conn, :user_return_to, current_path(conn))
   end

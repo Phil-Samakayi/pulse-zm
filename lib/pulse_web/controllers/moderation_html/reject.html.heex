@@ -1,0 +1,41 @@
+<div class="mx-auto max-w-sm">
+  <.link
+    navigate={~p"/moderation"}
+    class="text-sm font-semibold leading-6 text-copper-strong hover:text-copper"
+  >
+    <.icon name="hero-arrow-left-solid" class="h-3 w-3" /> Moderation queue
+  </.link>
+
+  <.header class="mt-4">
+    Reject {@location.name}
+    <:subtitle>
+      {@location.city}. The reason is saved with the submission.
+    </:subtitle>
+  </.header>
+
+  <.form
+    for={%{}}
+    id="reject_form"
+    action={~p"/moderation/locations/#{@location.id}/reject"}
+    method="post"
+    class="mt-8 space-y-6"
+  >
+    <.input
+      id="reject_reason"
+      name="reject[reason]"
+      type="text"
+      label="Why is this being rejected?"
+      value={@reason}
+      errors={@errors}
+      maxlength="280"
+      required
+    />
+
+    <button
+      type="submit"
+      class="w-full rounded-lg bg-danger px-3 py-2 text-sm font-semibold leading-6 text-paper-raised hover:opacity-90"
+    >
+      Reject submission
+    </button>
+  </.form>
+</div>
