@@ -42,6 +42,10 @@ defmodule PulseWeb.ReportFormat do
   def price_summary(%PriceReport{} = report),
     do: "#{commodity_label(report)}: K#{Decimal.to_string(report.price_kwacha)} / #{report.unit}"
 
+  @doc ~S|"1 person", "14 people".|
+  def people(1), do: "1 person"
+  def people(n) when is_integer(n), do: "#{n} people"
+
   def reporter_name(%{reported_by: %{username: username}}), do: username
   def reporter_name(_), do: "anonymous"
 

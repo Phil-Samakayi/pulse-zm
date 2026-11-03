@@ -47,6 +47,11 @@ defmodule PulseWeb.ReportFormatTest do
     assert ReportFormat.status_class(old, @now) == "text-ink-soft"
   end
 
+  test "people/1" do
+    assert ReportFormat.people(1) == "1 person"
+    assert ReportFormat.people(14) == "14 people"
+  end
+
   test "outage_short/1 uses the same words as the home page" do
     assert ReportFormat.outage_short(%OutageReport{utility: "electricity", status: "down"}) ==
              "Power out"
