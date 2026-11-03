@@ -28,6 +28,21 @@ defmodule PulseWeb.LocationLive.IndexTest do
     assert html =~ "just now"
   end
 
+  test "shows how many people are behind a status", %{conn: conn} do
+    location = location_fixture()
+
+    for _ <- 1..2 do
+      {:ok, _} =
+        Reports.create_outage_report(
+          valid_outage_attrs(location_id: location.id, reported_by_id: user_fixture().id)
+        )
+    end
+
+    {:ok, _view, html} = live(conn, ~p"/")
+
+    assert html =~ "2 people"
+  end
+
   test "says so when a location has no reports yet", %{conn: conn} do
     location_fixture()
 

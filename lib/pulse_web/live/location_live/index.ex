@@ -18,7 +18,7 @@ defmodule PulseWeb.LocationLive.Index do
   use PulseWeb, :live_view
 
   import PulseWeb.ReportFormat,
-    only: [utility_label: 1, status_word: 1, status_class: 2, time_ago: 2, full_time: 1]
+    only: [utility_label: 1, status_word: 1, status_class: 2, time_ago: 2, full_time: 1, people: 1]
 
   alias Pulse.Reports
   alias Pulse.Reports.Location
@@ -58,7 +58,11 @@ defmodule PulseWeb.LocationLive.Index do
             >
               <div class="min-w-0">
                 <p class="font-medium">{location.name}</p>
-                <.row_summary summary={@summaries[location.id]} now={@now} />
+                <.row_summary
+                  summary={@summaries[location.id]}
+                  runs={@runs[location.id] || %{}}
+                  now={@now}
+                />
               </div>
               <.icon
                 name="hero-chevron-right-mini"
@@ -73,6 +77,7 @@ defmodule PulseWeb.LocationLive.Index do
   end
 
   attr :summary, :map, default: nil
+  attr :runs, :map, default: %{}
   attr :now, DateTime, required: true
 
   defp row_summary(%{summary: nil} = assigns) do
@@ -87,6 +92,9 @@ defmodule PulseWeb.LocationLive.Index do
       <span :for={report <- @summary.outages} title={full_time(report.reported_at)}>
         <span class={["font-medium", status_class(report, @now)]}>
           {utility_label(report.utility)} {status_word(report.status)}
+        </span>
+        <span :if={crowd(@runs[report.utility]) >= 2}>
+          · {people(crowd(@runs[report.utility]))}
         </span>
         · {time_ago(report.reported_at, @now)}
       </span>
@@ -128,6 +136,7 @@ defmodule PulseWeb.LocationLive.Index do
   defp assign_summaries(socket) do
     assign(socket,
       summaries: Reports.location_summaries(socket.assigns.location_ids),
+      runs: Reports.outage_runs(socket.assigns.location_ids),
       now: DateTime.utc_now()
     )
   end
@@ -135,4 +144,8 @@ defmodule PulseWeb.LocationLive.Index do
   defp group_label("residential"), do: "Residential areas"
   defp group_label("market"), do: "Markets"
   defp group_label(other), do: other
+
+  # How many people are behind the current status (see Reports.outage_runs/1).
+  defp crowd(%{people: people}), do: people
+  defp crowd(_), do: 0
 end
