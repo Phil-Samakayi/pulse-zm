@@ -96,6 +96,13 @@ defmodule PulseWeb.LocationLive.ShowTest do
     refute html =~ "Me too"
   end
 
+  test "has a WhatsApp share link with the location's summary", %{conn: conn, location: location} do
+    {:ok, _view, html} = live(conn, ~p"/locations/#{location.id}")
+
+    assert html =~ "https://wa.me/?text=%2AKabwata%2A"
+    assert html =~ "Power%20out"
+  end
+
   test "a pending location isn't shown to a regular user", %{conn: conn} do
     pending = Reports.submit_location(valid_location_attrs(submitted_by_id: user_fixture().id))
     {:ok, pending} = pending

@@ -39,6 +39,17 @@ defmodule PulseWeb.LocationLive.Show do
       <.header class="mt-4">
         {@location.name}
         <:subtitle>{@location.city} · {group_label(@location.location_type)}</:subtitle>
+        <:actions>
+          <.link
+            href={whatsapp_url(@share_text)}
+            target="_blank"
+            rel="noopener"
+            class="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm font-semibold text-ink hover:border-copper hover:text-copper-strong"
+          >
+            <.icon name="hero-share-mini" class="h-4 w-4" />
+            <span><span class="hidden sm:inline">Share on </span>WhatsApp</span>
+          </.link>
+        </:actions>
       </.header>
 
       <section
@@ -278,13 +289,26 @@ defmodule PulseWeb.LocationLive.Show do
   defp assign_status(socket) do
     status = Reports.location_status(socket.assigns.location)
 
-    location_id = socket.assigns.location.id
+    location = socket.assigns.location
+    runs = Map.get(Reports.outage_runs([location.id]), location.id, %{})
+    now = DateTime.utc_now()
+
+    share_text =
+      share_text(
+        location,
+        status.latest_outages,
+        runs,
+        status.latest_prices,
+        url(~p"/locations/#{location.id}"),
+        now
+      )
 
     assign(socket,
       latest_outages: status.latest_outages,
       latest_prices: status.latest_prices,
-      runs: Map.get(Reports.outage_runs([location_id]), location_id, %{}),
-      now: DateTime.utc_now()
+      runs: runs,
+      share_text: share_text,
+      now: now
     )
   end
 
