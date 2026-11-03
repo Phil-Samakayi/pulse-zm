@@ -35,7 +35,7 @@ defmodule PulseWeb.LocationLive.Index do
       </.header>
 
       <p class="mt-4 text-sm">
-        <.link navigate={~p"/locations/new"} class="font-semibold text-copper-strong hover:underline">
+        <.link href={~p"/locations/new"} class="font-semibold text-copper-strong hover:underline">
           Propose a location
         </.link>
         not listed here.

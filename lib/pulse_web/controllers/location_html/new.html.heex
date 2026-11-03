@@ -1,0 +1,27 @@
+<div class="mx-auto max-w-sm">
+  <.link
+    navigate={~p"/"}
+    class="text-sm font-semibold leading-6 text-copper-strong hover:text-copper"
+  >
+    <.icon name="hero-arrow-left-solid" class="h-3 w-3" /> All locations
+  </.link>
+
+  <.header class="mt-4">
+    Propose a location
+    <:subtitle>
+      Suggest a residential area or market that isn't listed yet. An admin reviews it
+      before it goes live for everyone.
+    </:subtitle>
+  </.header>
+
+  <.simple_form for={@form} id="location_form" action={~p"/locations"} method="post">
+    <.input field={@form[:name]} type="text" label="Name" placeholder="e.g. Chawama" required />
+    <.input field={@form[:city]} type="text" label="City" required />
+    <.choice_group field={@form[:location_type]} label="Type" options={location_type_options()} />
+    <.honeypot field={@form[:website]} />
+
+    <:actions>
+      <.button class="w-full">Submit for review</.button>
+    </:actions>
+  </.simple_form>
+</div>

@@ -28,19 +28,22 @@ defmodule PulseWeb.Router do
     plug :require_authenticated_user
   end
 
+  # Proposing a location — a plain controller page rather than a
+  # LiveView, so it works even when the live connection can't stay up
+  # (see PulseWeb.LocationLive.Show's moduledoc). Declared (and therefore
+  # matched) before the "/" scope below: Phoenix's router matches routes
+  # in declaration order, so if the live "/locations/:id" route came
+  # first, "/locations/new" would be swallowed by it with :id bound to
+  # the literal string "new".
+  scope "/locations", PulseWeb do
+    pipe_through [:browser, :require_login]
+
+    get "/new", LocationController, :new
+    post "/", LocationController, :create
+  end
+
   scope "/", PulseWeb do
     pipe_through :browser
-
-    # Requires login — on_mount bounces an anonymous visitor to the
-    # login page itself. Declared (and therefore matched) before
-    # "/locations/:id" below: Phoenix's router compiles routes in
-    # declaration order, so if the dynamic route came first,
-    # "/locations/new" would be swallowed by it with :id bound to the
-    # literal string "new".
-    live_session :require_user,
-      on_mount: [{PulseWeb.UserAuth, :ensure_authenticated}] do
-      live "/locations/new", LocationLive.New, :new
-    end
 
     # Public pages: current_user is assigned (for the nav bar) but not
     # required — anyone can browse locations and read reports.
