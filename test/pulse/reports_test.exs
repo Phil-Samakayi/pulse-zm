@@ -298,18 +298,78 @@ defmodule Pulse.ReportsTest do
     end
   end
 
+  describe "outage_runs/1" do
+    test "counts the people behind the current status, back to the last change" do
+      location = location_fixture()
+      [a, b, c] = for _ <- 1..3, do: user_fixture()
+
+      insert_outage!(location, "electricity", "down", minutes_ago: 600, by: a)
+      insert_outage!(location, "electricity", "up", minutes_ago: 300, by: a)
+      first = insert_outage!(location, "electricity", "down", minutes_ago: 120, by: b)
+      insert_outage!(location, "electricity", "down", minutes_ago: 60, by: c)
+      last = insert_outage!(location, "electricity", "down", minutes_ago: 30, by: b)
+
+      run = Reports.outage_runs([location.id])[location.id]["electricity"]
+
+      assert run.status == "down"
+      assert run.since == first.reported_at
+      assert run.latest_at == last.reported_at
+      assert run.people == 2
+      assert MapSet.equal?(run.reporter_ids, MapSet.new([b.id, c.id]))
+    end
+
+    test "keeps each utility separate" do
+      location = location_fixture()
+      user = user_fixture()
+
+      insert_outage!(location, "electricity", "down", minutes_ago: 60, by: user)
+      insert_outage!(location, "water", "up", minutes_ago: 10, by: user)
+
+      runs = Reports.outage_runs([location.id])[location.id]
+
+      assert runs["electricity"].status == "down"
+      assert runs["water"].status == "up"
+    end
+
+    test "doesn't count flagged reports" do
+      location = location_fixture()
+      [a, b] = for _ <- 1..2, do: user_fixture()
+
+      insert_outage!(location, "water", "down", minutes_ago: 60, by: a)
+      flagged = insert_outage!(location, "water", "down", minutes_ago: 30, by: b)
+      {:ok, _} = Reports.flag_outage_report(flagged, %{"flag_reason" => "not true"})
+
+      assert Reports.outage_runs([location.id])[location.id]["water"].people == 1
+    end
+
+    test "still covers a location whose latest report is older than the lookback" do
+      location = location_fixture()
+      insert_outage!(location, "electricity", "down", minutes_ago: 30 * 24 * 60, by: user_fixture())
+
+      run = Reports.outage_runs([location.id])[location.id]["electricity"]
+
+      assert run.people == 1
+      assert run.since == run.latest_at
+    end
+
+    test "leaves out locations with no outage reports" do
+      assert Reports.outage_runs([location_fixture().id]) == %{}
+    end
+  end
+
   defp minutes_ago(minutes) do
     DateTime.utc_now() |> DateTime.add(-minutes * 60) |> DateTime.truncate(:second)
   end
 
   # Inserted directly rather than through create_*_report/1, because those
   # always stamp reported_at with "now" — these tests need control over it.
-  defp insert_outage!(location, utility, status, minutes_ago: minutes) do
+  defp insert_outage!(location, utility, status, opts) do
     %Pulse.Reports.OutageReport{
       location_id: location.id,
       utility: utility,
       status: status,
-      reported_at: minutes_ago(minutes)
+      reported_at: minutes_ago(Keyword.fetch!(opts, :minutes_ago)),
+      reported_by_id: opts[:by] && opts[:by].id
     }
     |> Pulse.Repo.insert!()
   end

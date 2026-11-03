@@ -191,6 +191,76 @@ defmodule Pulse.Reports do
     Enum.find_index(OutageReport.utilities(), &(&1 == utility))
   end
 
+  @run_lookback_days 14
+
+  @doc """
+  The current "run" for each utility at each location: how long the
+  latest status has held, and how many people have reported it. This is
+  what turns single reports into "Power out since Monday 06:46 · 14
+  people" — the "me too" count.
+
+  A run is the latest report plus every report before it with the same
+  status, going back until a report with a different status (or
+  #{@run_lookback_days} days, whichever comes first). So "out, out, on,
+  out, out" (newest last) is a two-report "out" run.
+
+  Returns `%{location_id => %{utility => run}}`, where `run` is a map of:
+
+    * `:status` — the latest report's status
+    * `:since` — when the earliest report in the run was made
+    * `:latest_at` — when the latest report was made
+    * `:people` — how many different people reported it (flagged
+      reports don't count; reports with no user count one each)
+    * `:reporter_ids` — `MapSet` of user ids who reported it, so a page
+      can say "You reported this" instead of offering "Me too" again
+  """
+  def outage_runs(location_ids) when is_list(location_ids) do
+    cutoff = DateTime.add(DateTime.utc_now(), -@run_lookback_days * 24 * 60 * 60, :second)
+    fields = [:id, :location_id, :utility, :status, :reported_at, :reported_by_id, :is_flagged]
+
+    latest =
+      Repo.all(
+        from r in OutageReport,
+          where: r.location_id in ^location_ids,
+          distinct: [r.location_id, r.utility],
+          order_by: [desc: r.reported_at, desc: r.id],
+          select: map(r, ^fields)
+      )
+
+    recent =
+      Repo.all(
+        from r in OutageReport,
+          where: r.location_id in ^location_ids and r.reported_at >= ^cutoff,
+          order_by: [desc: r.reported_at, desc: r.id],
+          select: map(r, ^fields)
+      )
+      |> Enum.group_by(&{&1.location_id, &1.utility})
+
+    Enum.reduce(latest, %{}, fn newest, acc ->
+      key = {newest.location_id, newest.utility}
+
+      run =
+        case Map.get(recent, key, []) do
+          [] -> [newest]
+          reports -> Enum.take_while(reports, &(&1.status == newest.status))
+        end
+
+      counted = Enum.reject(run, & &1.is_flagged)
+      reporter_ids = counted |> Enum.map(& &1.reported_by_id) |> Enum.reject(&is_nil/1) |> MapSet.new()
+      anonymous = Enum.count(counted, &is_nil(&1.reported_by_id))
+
+      summary = %{
+        status: newest.status,
+        since: List.last(run).reported_at,
+        latest_at: newest.reported_at,
+        people: MapSet.size(reporter_ids) + anonymous,
+        reporter_ids: reporter_ids
+      }
+
+      Map.update(acc, newest.location_id, %{newest.utility => summary}, &Map.put(&1, newest.utility, summary))
+    end)
+  end
+
   ## Outage reports
 
   def create_outage_report(attrs) do
