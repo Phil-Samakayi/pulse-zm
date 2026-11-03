@@ -2,7 +2,7 @@ defmodule PulseWeb.ReportFormatTest do
   use ExUnit.Case, async: true
 
   alias PulseWeb.ReportFormat
-  alias Pulse.Reports.OutageReport
+  alias Pulse.Reports.{Location, OutageReport, PriceReport}
 
   # 10:00 in Lusaka (UTC+2).
   @now ~U[2026-11-02 08:00:00Z]
@@ -45,6 +45,51 @@ defmodule PulseWeb.ReportFormatTest do
 
     assert ReportFormat.status_class(fresh, @now) == "text-danger"
     assert ReportFormat.status_class(old, @now) == "text-ink-soft"
+  end
+
+  describe "share_text/6" do
+    test "lists each status and price, then the link" do
+      location = %Location{name: "Kabwata"}
+      power = %OutageReport{utility: "electricity", status: "down", reported_at: ~U[2026-11-02 07:30:00Z]}
+      water = %OutageReport{utility: "water", status: "up", reported_at: ~U[2026-11-01 16:20:00Z]}
+
+      runs = %{
+        "electricity" => %{people: 14, since: ~U[2026-11-02 04:46:00Z]},
+        "water" => %{people: 1, since: ~U[2026-11-01 16:20:00Z]}
+      }
+
+      price = %PriceReport{
+        commodity: "mealie_meal",
+        commodity_other: "",
+        unit: "25kg bag",
+        price_kwacha: Decimal.new("450.00"),
+        reported_at: ~U[2026-10-01 07:10:00Z]
+      }
+
+      text =
+        ReportFormat.share_text(location, [power, water], runs, [price], "https://x.test/locations/1", @now)
+
+      assert text ==
+               Enum.join(
+                 [
+                   "*Kabwata* on Pulse",
+                   "• Power out since today, 06:46 · 14 people",
+                   "• Water on · yesterday, 18:20",
+                   "• Mealie meal: K450.00 / 25kg bag · 1 Oct, 09:10",
+                   "https://x.test/locations/1"
+                 ],
+                 "\n"
+               )
+    end
+
+    test "says so when there are no reports yet" do
+      text = ReportFormat.share_text(%Location{name: "Chawama"}, [], %{}, [], "https://x.test", @now)
+      assert text == "*Chawama* on Pulse\nNo reports yet. Add one:\nhttps://x.test"
+    end
+  end
+
+  test "whatsapp_url/1 percent-encodes the message" do
+    assert ReportFormat.whatsapp_url("a b\n*c*") == "https://wa.me/?text=a%20b%0A%2Ac%2A"
   end
 
   test "people/1" do

@@ -115,5 +115,42 @@ defmodule PulseWeb.ReportFormat do
   def full_time(%DateTime{} = dt),
     do: Calendar.strftime(to_lusaka(dt), "%-d %b %Y, %H:%M") <> " (Lusaka time)"
 
+  ## Sharing
+
+  @doc """
+  The WhatsApp message for a location, e.g.
+
+      *Kabwata* on Pulse
+      • Power out since today, 06:46 · 14 people
+      • Water on · yesterday, 18:20
+      • Mealie meal: K450.00 / 25kg bag · 1 Oct, 09:10
+      https://pulse-zm.onrender.com/locations/1
+
+  `runs` is that location's map from `Pulse.Reports.outage_runs/1`.
+  `*…*` is WhatsApp's bold.
+  """
+  def share_text(location, outages, runs, prices, url, %DateTime{} = now) do
+    lines =
+      Enum.map(outages, &outage_share_line(&1, runs[&1.utility], now)) ++
+        Enum.map(prices, &"#{price_summary(&1)} · #{reported_when(&1.reported_at, now)}")
+
+    body =
+      case lines do
+        [] -> ["No reports yet. Add one:"]
+        lines -> Enum.map(lines, &("• " <> &1))
+      end
+
+    Enum.join(["*#{location.name}* on Pulse"] ++ body ++ [url], "\n")
+  end
+
+  defp outage_share_line(report, %{people: people, since: since}, now) when people >= 2,
+    do: "#{outage_short(report)} since #{reported_when(since, now)} · #{people(people)}"
+
+  defp outage_share_line(report, _run, now),
+    do: "#{outage_short(report)} · #{reported_when(report.reported_at, now)}"
+
+  @doc "A wa.me link that opens WhatsApp (app or web) with `text` ready to send."
+  def whatsapp_url(text), do: "https://wa.me/?text=" <> URI.encode(text, &URI.char_unreserved?/1)
+
   defp to_lusaka(%DateTime{} = dt), do: DateTime.add(dt, @lusaka_offset_seconds, :second)
 end
