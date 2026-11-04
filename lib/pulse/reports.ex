@@ -261,6 +261,50 @@ defmodule Pulse.Reports do
     end)
   end
 
+  @price_board_days 14
+
+  @doc """
+  Price comparison: for each standard item (`PriceReport.comparable_commodities/0`),
+  the latest price at every approved location from the last
+  #{@price_board_days} days, cheapest first.
+
+  Only like-for-like prices count: a report must be in the item's
+  standard unit (older reports from before units were fixed, e.g.
+  tomatoes "per kg", are left out), and flagged reports are left out
+  until a moderator clears them. One price per location per item — its
+  most recent.
+
+  Returns `%{commodity => [%PriceReport{location: %Location{}, reported_by: ...}, ...]}`;
+  an item with no recent prices is missing from the map. Pass
+  `days: n` to change the window.
+  """
+  def price_board(opts \\ []) do
+    days = Keyword.get(opts, :days, @price_board_days)
+    cutoff = DateTime.add(DateTime.utc_now(), -days * 24 * 60 * 60, :second)
+
+    in_standard_unit =
+      Enum.reduce(PriceReport.comparable_commodities(), dynamic(false), fn commodity, acc ->
+        unit = PriceReport.standard_unit(commodity)
+        dynamic([r], ^acc or (r.commodity == ^commodity and r.unit == ^unit))
+      end)
+
+    approved = Location.approved()
+
+    Repo.all(
+      from r in PriceReport,
+        join: l in assoc(r, :location),
+        where: l.status == ^approved and not r.is_flagged and r.reported_at >= ^cutoff,
+        where: ^in_standard_unit,
+        distinct: [r.commodity, r.location_id],
+        order_by: [desc: r.reported_at, desc: r.id],
+        preload: [:reported_by, location: l]
+    )
+    |> Enum.group_by(& &1.commodity)
+    |> Map.new(fn {commodity, reports} ->
+      {commodity, Enum.sort_by(reports, & &1.price_kwacha, Decimal)}
+    end)
+  end
+
   ## Outage reports
 
   def create_outage_report(attrs) do
