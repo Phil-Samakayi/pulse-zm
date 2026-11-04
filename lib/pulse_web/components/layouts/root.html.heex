@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
+    <%!-- For turning on alerts (assets/js/app.js); absent when alerts are switched off. --%>
+    <meta :if={Pulse.Push.enabled?()} name="vapid-public-key" content={Pulse.Push.public_key()} />
     <.live_title default="Pulse" suffix=" · Pulse">
       {assigns[:page_title]}
     </.live_title>

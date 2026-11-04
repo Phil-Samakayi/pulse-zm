@@ -17,7 +17,9 @@ defmodule PulseWeb do
   those modules here.
   """
 
-  def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
+  # sw.js is the alerts service worker (priv/static/sw.js). It has to be
+  # served from the site root, not /assets, so it can handle every page.
+  def static_paths, do: ~w(assets fonts images favicon.ico robots.txt sw.js)
 
   def router do
     quote do

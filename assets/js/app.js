@@ -64,6 +64,76 @@ document.querySelectorAll('[data-flash="info"]').forEach((el) => {
   setTimeout(() => el.remove(), 6000)
 })
 
+// Alerts (push notifications). A "Get alerts" form carries
+// data-needs-push: before it's submitted, make sure this browser can
+// receive notifications — ask permission, subscribe through the browser's
+// push service with Pulse's public key (from the vapid-public-key meta
+// tag), and save the subscription to the server. Only then submit the
+// form, which records what to alert about. Plain JS and fetch, so it works
+// whether or not the page's live connection is up. See Pulse.Alerts.
+const vapidPublicKey = document.querySelector("meta[name='vapid-public-key']")?.getAttribute("content")
+
+const pushMessages = {
+  unsupported: "This browser can't show alerts. On Android, open Pulse in Chrome.",
+  denied: "Notifications are blocked for Pulse. Allow them in your browser's site settings, then try again.",
+  failed: "Couldn't turn on alerts just now. Please try again."
+}
+
+function urlBase64ToUint8Array(base64) {
+  const padding = "=".repeat((4 - (base64.length % 4)) % 4)
+  const raw = atob((base64 + padding).replace(/-/g, "+").replace(/_/g, "/"))
+  return Uint8Array.from(raw, (char) => char.charCodeAt(0))
+}
+
+async function ensurePushSubscription() {
+  const supported =
+    vapidPublicKey && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window
+
+  if (!supported) throw new Error("unsupported")
+
+  // Ask first, while the tap that triggered this still counts as the
+  // user's action — some browsers only show the prompt then.
+  const permission =
+    Notification.permission === "granted" ? "granted" : await Notification.requestPermission()
+
+  if (permission !== "granted") throw new Error("denied")
+
+  const registration = await navigator.serviceWorker.register("/sw.js")
+  await navigator.serviceWorker.ready
+
+  const subscription =
+    (await registration.pushManager.getSubscription()) ||
+    (await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+    }))
+
+  const response = await fetch("/alerts/subscriptions", {
+    method: "POST",
+    headers: {"content-type": "application/json", "x-csrf-token": csrfToken},
+    body: JSON.stringify(subscription)
+  })
+
+  if (!response.ok) throw new Error("failed")
+}
+
+document.addEventListener("submit", async (event) => {
+  const form = event.target.closest("form[data-needs-push]")
+  if (!form || form.dataset.pushReady === "true") return
+
+  event.preventDefault()
+  const status = form.querySelector("[data-push-status]")
+  if (status) status.textContent = "Turning on alerts…"
+
+  try {
+    await ensurePushSubscription()
+    form.dataset.pushReady = "true"
+    form.submit()
+  } catch (error) {
+    if (status) status.textContent = pushMessages[error.message] || pushMessages.failed
+  }
+})
+
 // Theme toggle. Light is the default; dark only applies once someone
 // clicks the button, and the choice is remembered in localStorage (the
 // inline script in root.html.heex re-applies it on the next visit,
