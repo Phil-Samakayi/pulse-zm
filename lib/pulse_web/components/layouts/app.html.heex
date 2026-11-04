@@ -17,10 +17,10 @@
         <.icon name="hero-moon" class="theme-icon-moon h-4 w-4" />
       </button>
       <%!--
-        On phones the admin link shrinks to an icon, and the username itself
-        is the link to account settings (rather than a separate "Account"
-        link beside plain-text username), so a logged-in admin's nav still
-        fits on one line at ~360px wide.
+        On phones the admin link shrinks to an icon, and the account link,
+        Log out and Log in are left to the bottom tab bar (its Me / Log in
+        tab; Log out is on the account page), so the header isn't a second
+        copy of the tab bar. From sm: up there's no tab bar, so they show.
       --%>
       <.link
         :if={assigns[:current_user] && @current_user.is_admin}
@@ -36,15 +36,15 @@
         :if={assigns[:current_user]}
         navigate={~p"/users/settings"}
         title="Account settings"
-        class="flex items-center gap-1.5 hover:text-copper-strong"
+        class="hidden items-center gap-1.5 hover:text-copper-strong sm:flex"
       >
         <.icon name="hero-user-circle" class="h-5 w-5 flex-none" />
         <span class="max-w-[8rem] truncate">{@current_user.username}</span>
       </.link>
-      <.link :if={assigns[:current_user]} href={~p"/users/log_out"} method="delete" class="hover:text-copper-strong">
+      <.link :if={assigns[:current_user]} href={~p"/users/log_out"} method="delete" class="hidden hover:text-copper-strong sm:inline">
         Log out
       </.link>
-      <.link :if={!assigns[:current_user]} navigate={~p"/users/log_in"} class="hover:text-copper-strong">
+      <.link :if={!assigns[:current_user]} navigate={~p"/users/log_in"} class="hidden hover:text-copper-strong sm:inline">
         Log in
       </.link>
       <.link

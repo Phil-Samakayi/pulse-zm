@@ -10,7 +10,9 @@ defmodule PulseWeb.UserSettingsControllerTest do
       user = legacy_user_fixture()
       conn = conn |> log_in_user(user) |> get(~p"/users/settings")
 
-      assert html_response(conn, 200) =~ "Account"
+      html = html_response(conn, 200)
+      assert html =~ "Account"
+      assert html =~ ~s(id="settings-log-out")
     end
 
     test "redirects an anonymous visitor to log in", %{conn: conn} do
