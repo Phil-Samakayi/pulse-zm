@@ -88,6 +88,47 @@ defmodule PulseWeb.ReportFormatTest do
     end
   end
 
+  describe "price_share_text/4" do
+    test "lists each market's price, cheapest first, then the link" do
+      reports = [
+        %PriceReport{
+          price_kwacha: Decimal.new("420.00"),
+          reported_at: ~U[2026-11-02 07:10:00Z],
+          location: %Location{name: "City Market"}
+        },
+        %PriceReport{
+          price_kwacha: Decimal.new("450.00"),
+          reported_at: ~U[2026-11-01 14:30:00Z],
+          location: %Location{name: "Soweto Market"}
+        }
+      ]
+
+      text = ReportFormat.price_share_text("mealie_meal", reports, "https://x.test/prices/mealie_meal", @now)
+
+      assert text ==
+               Enum.join(
+                 [
+                   "*Mealie meal (25kg bag)* prices on Pulse",
+                   "• K420.00 at City Market · today, 09:10",
+                   "• K450.00 at Soweto Market · yesterday, 16:30",
+                   "https://x.test/prices/mealie_meal"
+                 ],
+                 "\n"
+               )
+    end
+
+    test "says so when there are no recent prices" do
+      assert ReportFormat.price_share_text("onions", [], "https://x.test", @now) ==
+               "*Onions (pile)* prices on Pulse\nNo prices reported in the last two weeks. Add one:\nhttps://x.test"
+    end
+  end
+
+  test "item_with_unit/1 and kwacha/1" do
+    assert ReportFormat.item_with_unit("cooking_oil") == "Cooking oil (2.5 litres)"
+    assert ReportFormat.item_with_unit("other") == "Other"
+    assert ReportFormat.kwacha(Decimal.new("126.00")) == "K126.00"
+  end
+
   test "whatsapp_url/1 percent-encodes the message" do
     assert ReportFormat.whatsapp_url("a b\n*c*") == "https://wa.me/?text=a%20b%0A%2Ac%2A"
   end

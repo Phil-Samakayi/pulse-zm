@@ -149,6 +149,44 @@ defmodule PulseWeb.ReportFormat do
   defp outage_share_line(report, _run, now),
     do: "#{outage_short(report)} · #{reported_when(report.reported_at, now)}"
 
+  @doc """
+  The WhatsApp message for one item's price comparison, e.g.
+
+      *Mealie meal (25kg bag)* prices on Pulse
+      • K420.00 at City Market · today, 09:10
+      • K450.00 at Soweto Market · yesterday, 16:30
+      https://pulse-zm.onrender.com/prices/mealie_meal
+
+  `reports` is that item's list from `Pulse.Reports.price_board/1`
+  (cheapest first, each with its `:location` preloaded).
+  """
+  def price_share_text(commodity, reports, url, %DateTime{} = now) do
+    body =
+      case reports do
+        [] ->
+          ["No prices reported in the last two weeks. Add one:"]
+
+        reports ->
+          Enum.map(reports, fn report ->
+            "• #{kwacha(report.price_kwacha)} at #{report.location.name} · " <>
+              reported_when(report.reported_at, now)
+          end)
+      end
+
+    Enum.join(["*#{item_with_unit(commodity)}* prices on Pulse"] ++ body ++ [url], "\n")
+  end
+
+  @doc ~S|"K420.00".|
+  def kwacha(%Decimal{} = amount), do: "K" <> Decimal.to_string(amount)
+
+  @doc ~S|"Mealie meal (25kg bag)", or just the item name if it has no standard unit.|
+  def item_with_unit(commodity) do
+    case PriceReport.standard_unit(commodity) do
+      nil -> PriceReport.commodity_label(commodity)
+      unit -> "#{PriceReport.commodity_label(commodity)} (#{unit})"
+    end
+  end
+
   @doc "A wa.me link that opens WhatsApp (app or web) with `text` ready to send."
   def whatsapp_url(text), do: "https://wa.me/?text=" <> URI.encode(text, &URI.char_unreserved?/1)
 
