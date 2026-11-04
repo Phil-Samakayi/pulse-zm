@@ -58,7 +58,7 @@ defmodule PulseWeb.PriceLive.Index do
         :if={@unpriced != []}
         class="mt-6 rounded-lg border border-dashed border-line bg-paper-raised px-4 py-6 text-center"
       >
-        <.icon name="hero-shopping-bag" class="h-7 w-7 text-copper" />
+        <PulseWeb.Illustrations.basket class="mx-auto h-16 w-16 text-copper" />
         <p class="mt-2 font-semibold text-ink">No prices in the last two weeks</p>
         <p class="mt-2 flex flex-wrap justify-center gap-1.5">
           <.link

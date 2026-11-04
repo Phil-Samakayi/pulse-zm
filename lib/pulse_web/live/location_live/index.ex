@@ -66,8 +66,18 @@ defmodule PulseWeb.LocationLive.Index do
         not listed here.
       </p>
 
-      <div :if={@grouped == %{}} class="mt-8 text-ink-soft">
-        No locations yet.
+      <div
+        :if={@grouped == %{}}
+        class="mt-8 rounded-lg border border-dashed border-line bg-paper-raised px-4 py-6 text-center"
+      >
+        <PulseWeb.Illustrations.map_pin class="mx-auto h-16 w-16 text-copper" />
+        <p class="mt-2 font-semibold text-ink">No locations yet</p>
+        <p class="mt-1 text-sm text-ink-soft">
+          Know an area or market that should be here?
+          <.link href={~p"/locations/new"} class="font-semibold text-copper-strong hover:underline">
+            Propose it
+          </.link>
+        </p>
       </div>
 
       <div

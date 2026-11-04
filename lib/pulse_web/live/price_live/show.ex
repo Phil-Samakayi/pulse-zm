@@ -51,13 +51,20 @@ defmodule PulseWeb.PriceLive.Show do
         </:actions>
       </.header>
 
-      <p :if={@reports == []} class="mt-8 text-sm text-ink-soft">
-        No prices in the last two weeks yet. Seen one? Open the market from the
-        <.link navigate={~p"/"} class="font-semibold text-copper-strong hover:underline">
-          locations list
-        </.link>
-        and tap “Report a price”.
-      </p>
+      <div
+        :if={@reports == []}
+        class="mt-8 rounded-lg border border-dashed border-line bg-paper-raised px-4 py-6 text-center"
+      >
+        <PulseWeb.Illustrations.basket class="mx-auto h-16 w-16 text-copper" />
+        <p class="mt-2 font-semibold text-ink">No prices in the last two weeks yet</p>
+        <p class="mt-1 text-sm text-ink-soft">
+          Seen one? Open the market from the
+          <.link href={~p"/" <> "#group-market"} class="font-semibold text-copper-strong hover:underline">
+            locations list
+          </.link>
+          and tap “Report a price”.
+        </p>
+      </div>
 
       <ul :if={@reports != []} class="mt-8 divide-y divide-line rounded-lg border border-line">
         <li :for={report <- @reports} class="flex items-start justify-between gap-4 px-4 py-3">
