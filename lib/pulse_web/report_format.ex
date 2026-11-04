@@ -165,6 +165,17 @@ defmodule PulseWeb.ReportFormat do
     Enum.join(["*#{location.name}* on Pulse"] ++ body ++ [url], "\n")
   end
 
+  @doc """
+  One line for a location's link preview (`og:description`), e.g.
+  "Power out since today, 06:46 · 14 people. Water on · yesterday, 18:20."
+  """
+  def status_summary(outages, runs, %DateTime{} = now) do
+    case outages do
+      [] -> "No reports yet. See what's happening here, or add the first report."
+      outages -> Enum.map_join(outages, ". ", &outage_share_line(&1, runs[&1.utility], now)) <> "."
+    end
+  end
+
   defp outage_share_line(report, %{people: people, since: since}, now) when people >= 2,
     do: "#{outage_short(report)} since #{reported_when(since, now)} · #{people(people)}"
 

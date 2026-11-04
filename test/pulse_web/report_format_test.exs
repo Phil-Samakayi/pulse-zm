@@ -62,6 +62,21 @@ defmodule PulseWeb.ReportFormatTest do
     refute ReportFormat.recent?(~U[2026-10-30 07:00:00Z], @now)
   end
 
+  describe "status_summary/3" do
+    test "one sentence per utility, for link previews" do
+      power = %OutageReport{utility: "electricity", status: "down", reported_at: ~U[2026-11-02 07:30:00Z]}
+      water = %OutageReport{utility: "water", status: "up", reported_at: ~U[2026-11-01 16:20:00Z]}
+      runs = %{"electricity" => %{people: 14, since: ~U[2026-11-02 04:46:00Z]}}
+
+      assert ReportFormat.status_summary([power, water], runs, @now) ==
+               "Power out since today, 06:46 · 14 people. Water on · yesterday, 18:20."
+    end
+
+    test "says so when there's nothing yet" do
+      assert ReportFormat.status_summary([], %{}, @now) =~ "No reports yet"
+    end
+  end
+
   describe "share_text/6" do
     test "lists each status and price, then the link" do
       location = %Location{name: "Kabwata"}
