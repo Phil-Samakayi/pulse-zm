@@ -13,19 +13,26 @@
     method="post"
   >
     <.choice_group field={@form[:commodity]} label="What" options={commodity_options()} />
-    <.input
-      field={@form[:commodity_other]}
-      type="text"
-      label="If “Other”, what is it?"
-      maxlength="80"
-    />
-    <.input
-      field={@form[:unit]}
-      type="text"
-      label="Unit"
-      placeholder="e.g. 25kg bag, 2 litres, bucket"
-      required
-    />
+    <%!--
+      Only needed for "Other": every other item has a fixed unit (shown on
+      its choice above) that the server sets itself. Hidden by CSS once a
+      standard item is picked (see .other-only in assets/css/app.css);
+      browsers without :has() just keep showing it, which is harmless.
+    --%>
+    <div class="other-only space-y-8">
+      <.input
+        field={@form[:commodity_other]}
+        type="text"
+        label="If “Other”, what is it?"
+        maxlength="80"
+      />
+      <.input
+        field={@form[:unit]}
+        type="text"
+        label="Unit for “Other”"
+        placeholder="e.g. tray of 30, 2kg packet"
+      />
+    </div>
     <.input
       field={@form[:price_kwacha]}
       type="number"

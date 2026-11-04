@@ -160,6 +160,45 @@ defmodule Pulse.ReportsTest do
       assert_received {:report_created, ^report}
     end
 
+    test "always stores a standard item in its standard unit", %{user: user, location: location} do
+      attrs = valid_price_attrs(location_id: location.id, reported_by_id: user.id, unit: "50kg sack")
+
+      assert {:ok, report} = Reports.create_price_report(attrs)
+      assert report.unit == "25kg bag"
+    end
+
+    test "onions are reported per pile, without typing a unit", %{user: user, location: location} do
+      attrs =
+        valid_price_attrs(location_id: location.id, reported_by_id: user.id, commodity: "onions")
+        |> Map.delete(:unit)
+
+      assert {:ok, report} = Reports.create_price_report(attrs)
+      assert report.unit == "pile"
+    end
+
+    test "keeps the typed unit for Other, and requires one", %{user: user, location: location} do
+      attrs =
+        valid_price_attrs(
+          location_id: location.id,
+          reported_by_id: user.id,
+          commodity: "other",
+          commodity_other: "Eggs",
+          unit: "tray of 30"
+        )
+
+      assert {:ok, report} = Reports.create_price_report(attrs)
+      assert report.unit == "tray of 30"
+
+      # A different location, so the duplicate-report cooldown doesn't
+      # answer first.
+      elsewhere = location_fixture()
+
+      assert {:error, changeset} =
+               Reports.create_price_report(%{attrs | unit: "", location_id: elsewhere.id})
+
+      assert "can't be blank" in errors_on(changeset).unit
+    end
+
     test "requires commodity_other when commodity is \"other\"", %{user: user, location: location} do
       attrs = valid_price_attrs(location_id: location.id, reported_by_id: user.id, commodity: "other")
 

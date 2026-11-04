@@ -78,6 +78,16 @@ defmodule PulseWeb.ReportHTML do
   defp status_options,
     do: Enum.map([OutageReport.up(), OutageReport.down()], &{String.capitalize(status_word(&1)), &1})
 
-  defp commodity_options,
-    do: Enum.map(PriceReport.commodities(), &{PriceReport.commodity_label(&1), &1})
+  # "Mealie meal · 25kg bag", "Tomatoes · pile", "Other".
+  defp commodity_options do
+    Enum.map(PriceReport.commodities(), fn commodity ->
+      label =
+        case PriceReport.standard_unit(commodity) do
+          nil -> PriceReport.commodity_label(commodity)
+          unit -> "#{PriceReport.commodity_label(commodity)} · #{unit}"
+        end
+
+      {label, commodity}
+    end)
+  end
 end

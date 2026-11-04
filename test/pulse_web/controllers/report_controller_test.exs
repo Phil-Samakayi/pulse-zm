@@ -126,6 +126,14 @@ defmodule PulseWeb.ReportControllerTest do
       assert [%{commodity: "mealie_meal"}] = Reports.location_status(location).latest_prices
     end
 
+    test "sets a standard item's unit itself", %{conn: conn, location: location} do
+      post(conn, ~p"/locations/#{location.id}/prices", %{
+        "price_report" => %{"commodity" => "cooking_oil", "price_kwacha" => "126"}
+      })
+
+      assert [%{unit: "2.5 litres"}] = Reports.location_status(location).latest_prices
+    end
+
     test "re-renders with errors", %{conn: conn, location: location} do
       conn =
         post(conn, ~p"/locations/#{location.id}/prices", %{

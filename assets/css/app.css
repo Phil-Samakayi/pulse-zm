@@ -64,4 +64,14 @@
   display: inline-block;
 }
 
+/* "Report a price" form: the "Other" name and unit fields only matter
+   for "Other" — every other item has a fixed unit. Hide them once a
+   standard item is picked. Written as "hide when a non-Other choice is
+   checked" (rather than "show when Other is checked") so a browser
+   without :has() support simply shows them, instead of hiding them for
+   good. */
+#price_form:has(input[name="price_report[commodity]"]:checked:not([value="other"])) .other-only {
+  display: none;
+}
+
 /* This file is for your main application CSS */
