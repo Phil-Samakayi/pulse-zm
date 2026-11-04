@@ -11,6 +11,28 @@
     </.live_title>
     <meta name="description" content="Crowdsourced power, water and market price reports for Zambia." />
     <%!--
+      Link previews (WhatsApp, Facebook, X): the card shown when a Pulse
+      link is shared. One branded image for every page; a location page
+      also sets og_description to its current status, so the preview says
+      "Power out since today, 10:55 · 3 people." (see LocationLive.Show).
+      The image URL has to be absolute, hence url/1.
+    --%>
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Pulse" />
+    <meta
+      property="og:title"
+      content={if assigns[:page_title], do: "#{assigns[:page_title]} · Pulse", else: "Pulse"}
+    />
+    <meta
+      property="og:description"
+      content={assigns[:og_description] || "Power, water and market prices in Lusaka, reported by people as it happens."}
+    />
+    <meta property="og:image" content={url(~p"/images/og-image.png")} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Pulse: power, water and prices in Lusaka" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <%!--
       Installable app: "Add to Home Screen" opens Pulse full-screen with
       its own icon (priv/static/manifest.json, priv/static/images/icon-*).
       iPhones also need this before they'll show alerts.
