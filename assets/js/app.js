@@ -60,6 +60,24 @@ document.addEventListener("click", (event) => {
   if (close) close.closest("[data-flash]").remove()
 })
 
+// Bottom tab bar (app.html.heex): mark the tab for the current page.
+// Done here rather than on the server so the same rule works on LiveView
+// and controller pages; re-run after every live navigation.
+function markCurrentTab() {
+  const path = window.location.pathname
+
+  document.querySelectorAll("[data-tab-match]").forEach((tab) => {
+    if (new RegExp(tab.dataset.tabMatch).test(path)) {
+      tab.setAttribute("aria-current", "page")
+    } else {
+      tab.removeAttribute("aria-current")
+    }
+  })
+}
+
+markCurrentTab()
+window.addEventListener("phx:page-loading-stop", markCurrentTab)
+
 document.querySelectorAll('[data-flash="info"]').forEach((el) => {
   setTimeout(() => el.remove(), 6000)
 })

@@ -57,7 +57,7 @@
     </div>
   </div>
 </header>
-<main class="px-4 py-12 sm:px-6 lg:px-8">
+<main class="px-4 pb-28 pt-8 sm:px-6 sm:py-12 lg:px-8">
   <div class="mx-auto max-w-2xl">
     <%!--
       Success/error messages are shown by `page_flash/1` in the root
@@ -78,3 +78,46 @@
     {@inner_content}
   </div>
 </main>
+<%!--
+  Bottom tab bar on phones (hidden from sm: up, where the header has
+  room). Plain links, so it works without the live connection. Which tab
+  is current is marked by assets/js/app.js from the URL (it works the same
+  on LiveView and controller pages); phx-update="ignore" stops LiveView
+  from clearing that mark when it re-renders the page.
+--%>
+<nav
+  id="tab-bar"
+  phx-update="ignore"
+  aria-label="Main"
+  class="fixed inset-x-0 bottom-0 z-10 border-t border-line bg-paper-raised pb-[env(safe-area-inset-bottom)] sm:hidden"
+>
+  <div class="mx-auto grid max-w-md grid-cols-3">
+    <.link navigate={~p"/"} data-tab-match="^/($|locations)" class="tab-link">
+      <.icon name="hero-home" class="h-6 w-6" /> Home
+    </.link>
+    <.link navigate={~p"/prices"} data-tab-match="^/prices" class="tab-link">
+      <%!-- A plain K for kwacha, drawn in the same box as the other icons. --%>
+      <span
+        class="flex h-6 w-6 items-center justify-center rounded-md border-2 border-current text-[13px] font-extrabold leading-none"
+        aria-hidden="true"
+      >K</span>
+      Prices
+    </.link>
+    <.link
+      :if={assigns[:current_user]}
+      navigate={~p"/users/settings"}
+      data-tab-match="^/users"
+      class="tab-link"
+    >
+      <.icon name="hero-user-circle" class="h-6 w-6" /> Me
+    </.link>
+    <.link
+      :if={!assigns[:current_user]}
+      navigate={~p"/users/log_in"}
+      data-tab-match="^/users"
+      class="tab-link"
+    >
+      <.icon name="hero-user-circle" class="h-6 w-6" /> Log in
+    </.link>
+  </div>
+</nav>

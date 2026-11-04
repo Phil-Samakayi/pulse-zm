@@ -68,6 +68,14 @@ defmodule PulseWeb.LocationLive.IndexTest do
     refute html =~ "Power on"
   end
 
+  test "pages have the phone tab bar and the app manifest", %{conn: conn} do
+    html = conn |> get(~p"/") |> html_response(200)
+
+    assert html =~ ~s(id="tab-bar")
+    assert html =~ ~s(href="/prices")
+    assert html =~ ~s(rel="manifest")
+  end
+
   test "updates a row live when someone reports there", %{conn: conn} do
     location = location_fixture()
     user = user_fixture()
