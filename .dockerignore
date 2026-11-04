@@ -9,7 +9,11 @@ deps/
 *.db-wal
 node_modules/
 assets/node_modules/
-priv/static/
+# Built inside the image by `mix assets.deploy`, so local builds stay out.
+# Only these: the hand-written files in priv/static (sw.js, favicon.ico,
+# robots.txt, images) must be copied in, or they 404 in production.
+priv/static/assets/
+priv/static/cache_manifest.json
 test/
 README.md
 Dockerfile
