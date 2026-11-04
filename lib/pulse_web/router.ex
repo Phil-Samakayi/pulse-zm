@@ -58,6 +58,8 @@ defmodule PulseWeb.Router do
       on_mount: [{PulseWeb.UserAuth, :mount_current_user}] do
       live "/", LocationLive.Index, :index
       live "/locations/:id", LocationLive.Show, :show
+      live "/prices", PriceLive.Index, :index
+      live "/prices/:commodity", PriceLive.Show, :show
     end
   end
 

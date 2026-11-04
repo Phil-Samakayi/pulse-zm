@@ -34,6 +34,22 @@ defmodule PulseWeb.LocationLive.Index do
         </:subtitle>
       </.header>
 
+      <.link
+        navigate={~p"/prices"}
+        class="group mt-6 flex items-center justify-between gap-4 rounded-lg border border-line bg-paper-raised px-4 py-3 hover:border-copper"
+      >
+        <span>
+          <span class="font-semibold text-ink">Compare prices</span>
+          <span class="block text-sm text-ink-soft">
+            Mealie meal, cooking oil, charcoal and more, place by place
+          </span>
+        </span>
+        <.icon
+          name="hero-chevron-right-mini"
+          class="flex-none text-ink-soft transition group-hover:translate-x-0.5 group-hover:text-copper-strong"
+        />
+      </.link>
+
       <p class="mt-4 text-sm">
         <.link href={~p"/locations/new"} class="font-semibold text-copper-strong hover:underline">
           Propose a location
