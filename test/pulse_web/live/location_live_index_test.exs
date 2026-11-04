@@ -51,6 +51,23 @@ defmodule PulseWeb.LocationLive.IndexTest do
     assert html =~ "No reports yet"
   end
 
+  test "a row whose reports are all old says so instead of listing them", %{conn: conn} do
+    location = location_fixture(name: "Chilenje")
+
+    %Pulse.Reports.OutageReport{
+      location_id: location.id,
+      utility: "electricity",
+      status: "up",
+      reported_at: DateTime.utc_now() |> DateTime.add(-10 * 24 * 60 * 60) |> DateTime.truncate(:second)
+    }
+    |> Pulse.Repo.insert!()
+
+    {:ok, _view, html} = live(conn, ~p"/")
+
+    assert html =~ "No recent reports · last report"
+    refute html =~ "Power on"
+  end
+
   test "updates a row live when someone reports there", %{conn: conn} do
     location = location_fixture()
     user = user_fixture()

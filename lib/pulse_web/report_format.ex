@@ -63,6 +63,28 @@ defmodule PulseWeb.ReportFormat do
   def stale?(%DateTime{} = reported_at, %DateTime{} = now),
     do: DateTime.diff(now, reported_at) > @stale_after_seconds
 
+  @doc """
+  The coloured dot before a status: teal for on, red for out, faded grey
+  once the report is over a day old (the same rule as `status_class/2`).
+  """
+  def status_dot_class(%OutageReport{} = report, %DateTime{} = now) do
+    cond do
+      stale?(report.reported_at, now) -> "bg-ink-soft opacity-40"
+      report.status == OutageReport.up() -> "bg-teal"
+      true -> "bg-danger"
+    end
+  end
+
+  # Past this, a report says nothing about right now: a home page row whose
+  # reports are all older reads "No recent reports · last 1 Oct" instead
+  # of listing them as if they were news, and the location page's tiles
+  # say "No recent report".
+  @recent_seconds 3 * 24 * 60 * 60
+
+  @doc "Whether a report time is recent enough (3 days) to describe right now."
+  def recent?(%DateTime{} = reported_at, %DateTime{} = now),
+    do: DateTime.diff(now, reported_at) <= @recent_seconds
+
   ## Times
 
   @doc ~S|Compact, for the home page rows: "just now", "12 min ago", "3 h ago", "2 d ago", then "1 Oct".|

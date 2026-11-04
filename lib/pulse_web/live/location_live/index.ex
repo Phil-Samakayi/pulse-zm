@@ -18,7 +18,16 @@ defmodule PulseWeb.LocationLive.Index do
   use PulseWeb, :live_view
 
   import PulseWeb.ReportFormat,
-    only: [utility_label: 1, status_word: 1, status_class: 2, time_ago: 2, full_time: 1, people: 1]
+    only: [
+      utility_label: 1,
+      status_word: 1,
+      status_class: 2,
+      status_dot_class: 2,
+      recent?: 2,
+      time_ago: 2,
+      full_time: 1,
+      people: 1
+    ]
 
   alias Pulse.Reports
   alias Pulse.Reports.Location
@@ -61,7 +70,12 @@ defmodule PulseWeb.LocationLive.Index do
         No locations yet.
       </div>
 
-      <div :for={type <- Location.location_types()} :if={@grouped[type]} class="mt-8">
+      <div
+        :for={type <- Location.location_types()}
+        :if={@grouped[type]}
+        id={"group-#{type}"}
+        class="mt-8 scroll-mt-20"
+      >
         <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-soft">
           {group_label(type)}
         </h2>
@@ -102,11 +116,24 @@ defmodule PulseWeb.LocationLive.Index do
     """
   end
 
+  # A row whose newest report is over three days old says so, rather
+  # than listing "Power on · 1 Oct" as if it were news. Otherwise each
+  # status gets a coloured dot (grey once it's over a day old) so the
+  # list can be scanned at a glance.
   defp row_summary(assigns) do
+    latest = latest_report_at(assigns.summary)
+    assigns = assign(assigns, latest: latest, recent: recent?(latest, assigns.now))
+
     ~H"""
-    <p class="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-ink-soft">
+    <p :if={!@recent} class="mt-0.5 text-sm text-ink-soft" title={full_time(@latest)}>
+      <span class="mr-1 inline-block h-2 w-2 rounded-full bg-ink-soft align-middle opacity-40" aria-hidden="true"></span>No recent reports · last report {time_ago(@latest, @now)}
+    </p>
+    <p :if={@recent} class="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-ink-soft">
       <span :for={report <- @summary.outages} title={full_time(report.reported_at)}>
-        <span class={["font-medium", status_class(report, @now)]}>
+        <span
+          class={["mr-1 inline-block h-2 w-2 rounded-full align-middle", status_dot_class(report, @now)]}
+          aria-hidden="true"
+        ></span><span class={["font-medium", status_class(report, @now)]}>
           {utility_label(report.utility)} {status_word(report.status)}
         </span>
         <span :if={crowd(@runs[report.utility]) >= 2}>
@@ -164,4 +191,10 @@ defmodule PulseWeb.LocationLive.Index do
   # How many people are behind the current status (see Reports.outage_runs/1).
   defp crowd(%{people: people}), do: people
   defp crowd(_), do: 0
+
+  defp latest_report_at(%{outages: outages, prices_updated_at: prices_at}) do
+    [prices_at | Enum.map(outages, & &1.reported_at)]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.max(DateTime)
+  end
 end

@@ -47,6 +47,21 @@ defmodule PulseWeb.ReportFormatTest do
     assert ReportFormat.status_class(old, @now) == "text-ink-soft"
   end
 
+  test "status_dot_class/2 colours the dot the same way" do
+    out = %OutageReport{status: "down", reported_at: ~U[2026-11-02 07:00:00Z]}
+    on = %OutageReport{status: "up", reported_at: ~U[2026-11-02 07:00:00Z]}
+    old = %OutageReport{status: "down", reported_at: ~U[2026-10-30 07:00:00Z]}
+
+    assert ReportFormat.status_dot_class(out, @now) == "bg-danger"
+    assert ReportFormat.status_dot_class(on, @now) == "bg-teal"
+    assert ReportFormat.status_dot_class(old, @now) =~ "opacity-40"
+  end
+
+  test "recent?/2 covers the last three days" do
+    assert ReportFormat.recent?(~U[2026-10-30 09:00:00Z], @now)
+    refute ReportFormat.recent?(~U[2026-10-30 07:00:00Z], @now)
+  end
+
   describe "share_text/6" do
     test "lists each status and price, then the link" do
       location = %Location{name: "Kabwata"}
