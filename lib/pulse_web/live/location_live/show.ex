@@ -122,19 +122,22 @@ defmodule PulseWeb.LocationLive.Show do
         </p>
       </section>
 
-      <p
+      <div
         :if={!@current_user}
-        class="mt-4 rounded-lg border border-line bg-paper-raised p-4 text-sm text-ink-soft"
+        class="mt-4 flex items-center gap-3 rounded-lg border border-line bg-paper-raised p-4 text-sm text-ink-soft"
       >
-        <.link href={~p"/users/log_in"} class="font-semibold text-copper-strong hover:underline">
-          Log in
-        </.link>
-        or
-        <.link href={~p"/users/register"} class="font-semibold text-copper-strong hover:underline">
-          sign up
-        </.link>
-        to report what's happening here or get alerts when it changes.
-      </p>
+        <PulseWeb.Illustrations.bell class="h-12 w-12 flex-none text-copper" />
+        <p>
+          <.link href={~p"/users/log_in"} class="font-semibold text-copper-strong hover:underline">
+            Log in
+          </.link>
+          or
+          <.link href={~p"/users/register"} class="font-semibold text-copper-strong hover:underline">
+            sign up
+          </.link>
+          to report what's happening here or get alerts when it changes.
+        </p>
+      </div>
 
       <section class="mt-8">
         <h2 class="text-sm font-semibold uppercase tracking-wide text-ink-soft">
@@ -292,7 +295,10 @@ defmodule PulseWeb.LocationLive.Show do
 
     ~H"""
     <div class={["rounded-xl p-3", tile_class(@state)]}>
-      <p class="text-sm font-semibold">{utility_label(@utility)}</p>
+      <div class="flex items-start justify-between gap-1">
+        <p class="text-sm font-semibold">{utility_label(@utility)}</p>
+        <PulseWeb.Illustrations.bulb_off :if={@state == :none} class="-mr-1 -mt-1 h-9 w-9 flex-none" />
+      </div>
 
       <div :if={@state == :none}>
         <p class="mt-1 font-bold leading-tight">No recent report</p>
@@ -407,6 +413,7 @@ defmodule PulseWeb.LocationLive.Show do
       )
 
     assign(socket,
+      og_description: status_summary(status.latest_outages, runs, now),
       latest_outages: status.latest_outages,
       latest_prices: status.latest_prices,
       runs: runs,

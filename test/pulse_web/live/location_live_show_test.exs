@@ -158,6 +158,14 @@ defmodule PulseWeb.LocationLive.ShowTest do
     refute html =~ "Get alerts for"
   end
 
+  test "a shared link previews the place's current status", %{conn: conn, location: location} do
+    html = conn |> get(~p"/locations/#{location.id}") |> html_response(200)
+
+    assert html =~ ~s(property="og:title" content="Kabwata · Pulse")
+    assert html =~ ~s(property="og:description" content="Power out · just now.")
+    assert html =~ ~r{property="og:image" content="https?://[^"]+/images/og-image}
+  end
+
   test "has a WhatsApp share link with the location's summary", %{conn: conn, location: location} do
     {:ok, _view, html} = live(conn, ~p"/locations/#{location.id}")
 
