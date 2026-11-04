@@ -57,10 +57,52 @@ defmodule PulseWeb.LocationLive.ShowTest do
   } do
     {:ok, _view, html} = conn |> log_in_user(user_fixture()) |> live(~p"/locations/#{location.id}")
 
-    assert html =~ "What&#39;s happening here right now?"
+    assert html =~ "Has something changed?"
     assert html =~ ~s(action="/locations/#{location.id}/outages")
     assert html =~ "Water on"
     assert html =~ "Report a price"
+  end
+
+  test "answers first: a tile per utility with the current status", %{
+    conn: conn,
+    location: location
+  } do
+    {:ok, view, _html} = live(conn, ~p"/locations/#{location.id}")
+
+    tiles = view |> element("section[aria-label='Power and water right now']") |> render()
+
+    assert tiles =~ "Power"
+    assert tiles =~ "out"
+    assert tiles =~ "Since just now"
+    assert tiles =~ "Water"
+    assert tiles =~ "Nobody has reported here yet"
+  end
+
+  test "a report from days ago reads as no recent report", %{conn: conn} do
+    location = location_fixture()
+
+    %Pulse.Reports.OutageReport{
+      location_id: location.id,
+      utility: "water",
+      status: "down",
+      reported_at: DateTime.utc_now() |> DateTime.add(-5 * 24 * 60 * 60) |> DateTime.truncate(:second)
+    }
+    |> Pulse.Repo.insert!()
+
+    {:ok, view, _html} = live(conn, ~p"/locations/#{location.id}")
+
+    tiles = view |> element("section[aria-label='Power and water right now']") |> render()
+    assert tiles =~ "No recent report"
+    assert tiles =~ "Last:"
+  end
+
+  test "a place with no reports asks what's happening rather than what changed", %{conn: conn} do
+    location = location_fixture()
+
+    {:ok, _view, html} = conn |> log_in_user(user_fixture()) |> live(~p"/locations/#{location.id}")
+
+    assert html =~ "What&#39;s happening here right now?"
+    refute html =~ "Has something changed?"
   end
 
   test "shows how long the status has held and how many people reported it", %{
