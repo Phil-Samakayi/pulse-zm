@@ -93,7 +93,8 @@ defmodule PulseWeb.ReportFormatTest do
       reports = [
         %PriceReport{
           price_kwacha: Decimal.new("420.00"),
-          reported_at: ~U[2026-11-02 07:10:00Z],
+          # 08:10 in Lusaka, under two hours before @now — "today, 08:10".
+          reported_at: ~U[2026-11-02 06:10:00Z],
           location: %Location{name: "City Market"}
         },
         %PriceReport{
@@ -109,7 +110,7 @@ defmodule PulseWeb.ReportFormatTest do
                Enum.join(
                  [
                    "*Mealie meal (25kg bag)* prices on Pulse",
-                   "• K420.00 at City Market · today, 09:10",
+                   "• K420.00 at City Market · today, 08:10",
                    "• K450.00 at Soweto Market · yesterday, 16:30",
                    "https://x.test/prices/mealie_meal"
                  ],
