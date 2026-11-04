@@ -38,6 +38,16 @@ defmodule PulseWeb.PriceLiveTest do
 
       assert html =~ "Onions (pile)"
       assert html =~ "No prices in the last two weeks"
+      assert html =~ ~s(href="/#group-market")
+    end
+
+    test "lists items with prices before the ones without", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/prices")
+
+      {priced_at, _} = :binary.match(html, "Mealie meal (25kg bag)")
+      {empty_at, _} = :binary.match(html, "No prices in the last two weeks")
+
+      assert priced_at < empty_at
     end
 
     test "is linked from the home page", %{conn: conn} do

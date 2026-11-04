@@ -36,15 +36,15 @@ defmodule PulseWeb.PriceLive.Index do
         </:subtitle>
       </.header>
 
-      <ul class="mt-8 divide-y divide-line rounded-lg border border-line">
-        <li :for={commodity <- PriceReport.comparable_commodities()}>
+      <ul :if={@priced != []} class="mt-8 divide-y divide-line rounded-lg border border-line">
+        <li :for={commodity <- @priced}>
           <.link
             navigate={~p"/prices/#{commodity}"}
             class="group flex items-center justify-between gap-4 px-4 py-3 hover:bg-paper-raised"
           >
             <div class="min-w-0">
               <p class="font-medium">{item_with_unit(commodity)}</p>
-              <.cheapest reports={@board[commodity] || []} now={@now} />
+              <.cheapest reports={@board[commodity]} now={@now} />
             </div>
             <.icon
               name="hero-chevron-right-mini"
@@ -54,7 +54,32 @@ defmodule PulseWeb.PriceLive.Index do
         </li>
       </ul>
 
-      <p class="mt-6 text-sm text-ink-soft">
+      <div
+        :if={@unpriced != []}
+        class="mt-6 rounded-lg border border-dashed border-line bg-paper-raised px-4 py-6 text-center"
+      >
+        <.icon name="hero-shopping-bag" class="h-7 w-7 text-copper" />
+        <p class="mt-2 font-semibold text-ink">No prices in the last two weeks</p>
+        <p class="mt-2 flex flex-wrap justify-center gap-1.5">
+          <.link
+            :for={commodity <- @unpriced}
+            navigate={~p"/prices/#{commodity}"}
+            class="rounded-full border border-line px-2.5 py-0.5 text-xs text-ink-soft hover:border-copper hover:text-copper-strong"
+          >
+            {item_with_unit(commodity)}
+          </.link>
+        </p>
+        <p class="mt-4 text-sm text-ink-soft">Seen one at a market today? It takes 10 seconds.</p>
+        <.link
+          href={~p"/" <> "#group-market"}
+          class="mt-3 inline-block rounded-full bg-copper-strong px-4 py-2 text-sm font-semibold text-paper-raised hover:bg-copper"
+        >
+          Report a price
+        </.link>
+        <p class="mt-2 text-xs text-ink-soft">Pick the market, then tap “Report a price” there.</p>
+      </div>
+
+      <p :if={@unpriced == []} class="mt-6 text-sm text-ink-soft">
         Seen a price? Open the market from the
         <.link navigate={~p"/"} class="font-semibold text-copper-strong hover:underline">
           locations list
@@ -67,12 +92,6 @@ defmodule PulseWeb.PriceLive.Index do
 
   attr :reports, :list, required: true
   attr :now, DateTime, required: true
-
-  defp cheapest(%{reports: []} = assigns) do
-    ~H"""
-    <p class="mt-0.5 text-sm text-ink-soft">No prices in the last two weeks</p>
-    """
-  end
 
   defp cheapest(assigns) do
     assigns = assign(assigns, low: hd(assigns.reports), high: List.last(assigns.reports))
@@ -102,7 +121,15 @@ defmodule PulseWeb.PriceLive.Index do
   def handle_info({:report_created, _report}, socket), do: {:noreply, assign_board(socket)}
   def handle_info(:tick, socket), do: {:noreply, assign(socket, now: DateTime.utc_now())}
 
+  # Items with recent prices are listed first; the rest are folded into
+  # one "No prices in the last two weeks" card with a way to help, rather
+  # than a row each saying the same thing.
   defp assign_board(socket) do
-    assign(socket, board: Reports.price_board(), now: DateTime.utc_now())
+    board = Reports.price_board()
+
+    {priced, unpriced} =
+      Enum.split_with(PriceReport.comparable_commodities(), &(Map.get(board, &1, []) != []))
+
+    assign(socket, board: board, priced: priced, unpriced: unpriced, now: DateTime.utc_now())
   end
 end
