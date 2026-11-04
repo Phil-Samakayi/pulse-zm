@@ -130,6 +130,9 @@ document.addEventListener("submit", async (event) => {
     form.dataset.pushReady = "true"
     form.submit()
   } catch (error) {
+    // The real reason (a 404 for /sw.js, a push-service refusal, ...) goes
+    // to the console; the person just gets the short message.
+    console.error("Pulse alerts:", error)
     if (status) status.textContent = pushMessages[error.message] || pushMessages.failed
   }
 })
