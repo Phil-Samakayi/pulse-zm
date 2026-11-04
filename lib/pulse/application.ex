@@ -21,6 +21,9 @@ defmodule Pulse.Application do
       # and the anti-spam checks in Pulse.Reports. clean_period controls
       # how often Hammer sweeps expired counters out of ETS.
       {Pulse.RateLimit, clean_period: :timer.minutes(10)},
+      # Runs alert notifications in the background, so reporting an
+      # outage doesn't wait on push services — see Pulse.Alerts.
+      {Task.Supervisor, name: Pulse.TaskSupervisor},
       # Start a worker by calling: Pulse.Worker.start_link(arg)
       # {Pulse.Worker, arg},
       # Start to serve requests, typically the last entry

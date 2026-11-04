@@ -20,6 +20,19 @@ if System.get_env("PHX_SERVER") do
   config :pulse, PulseWeb.Endpoint, server: true
 end
 
+# Web Push (alerts) — see Pulse.Push. Generate a key pair once with
+# `mix generate.vapid.keys` and set both as env vars (on Render, and in
+# your shell for local dev). Without them alerts are simply switched off:
+# the "Get alerts" buttons don't show and nothing is sent. The subject is
+# how push services can contact the sender; it defaults to the site's URL.
+if vapid_public_key = System.get_env("VAPID_PUBLIC_KEY") do
+  config :web_push_elixir,
+    vapid_public_key: vapid_public_key,
+    vapid_private_key: System.fetch_env!("VAPID_PRIVATE_KEY"),
+    vapid_subject:
+      System.get_env("VAPID_SUBJECT") || "https://#{System.get_env("PHX_HOST") || "localhost"}"
+end
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||

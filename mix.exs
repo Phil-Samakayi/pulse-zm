@@ -70,7 +70,11 @@ defmodule Pulse.MixProject do
       # Resend.Swoosh.Adapter, api_key: ...`) is unchanged from 0.4.x.
       # Pinned to an exact version rather than a range since it's a
       # pre-release — bump deliberately once resend ships a stable 1.0.
-      {:resend, "1.0.0-rc.3"}
+      {:resend, "1.0.0-rc.3"},
+      # Web Push notifications (VAPID) for alerts — see Pulse.Push. Sends
+      # through req, the same HTTP client resend uses, so no new HTTP
+      # stack (and none of hackney's idna pinning that blocked resend 0.4).
+      {:web_push_elixir, "~> 0.8"}
     ]
   end
 

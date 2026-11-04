@@ -26,6 +26,19 @@ config :pulse, Pulse.Mailer, adapter: Swoosh.Adapters.Test
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false
 
+# Alerts: a fake push sender that sends the notification to the calling
+# process instead of over the network (test/support/push_test_adapter.ex),
+# notifications sent inline rather than from a background task (so the
+# test's database sandbox and process mailbox see them), and placeholder
+# VAPID keys so the "Get alerts" UI renders.
+config :pulse, :push_adapter, Pulse.Push.TestAdapter
+config :pulse, :alerts_inline, true
+
+config :web_push_elixir,
+  vapid_public_key: "test-public-key",
+  vapid_private_key: "test-private-key",
+  vapid_subject: "https://localhost"
+
 # Print only warnings and errors during test
 config :logger, level: :warning
 
