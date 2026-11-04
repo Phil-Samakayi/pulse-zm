@@ -96,6 +96,26 @@ defmodule PulseWeb.LocationLive.ShowTest do
     refute html =~ "Me too"
   end
 
+  test "a logged-in user can turn on alerts for the place, and then sees them on", %{
+    conn: conn,
+    location: location
+  } do
+    user = user_fixture()
+    conn = log_in_user(conn, user)
+
+    {:ok, _view, html} = live(conn, ~p"/locations/#{location.id}")
+    assert html =~ "Get alerts for Kabwata"
+    assert html =~ ~s(action="/alerts/locations/#{location.id}")
+    assert html =~ "data-needs-push"
+
+    {:ok, _} = Pulse.Alerts.follow_location(user, location)
+
+    {:ok, _view, html} = live(conn, ~p"/locations/#{location.id}")
+    assert html =~ "Alerts on"
+    assert html =~ "Turn off"
+    refute html =~ "Get alerts for"
+  end
+
   test "has a WhatsApp share link with the location's summary", %{conn: conn, location: location} do
     {:ok, _view, html} = live(conn, ~p"/locations/#{location.id}")
 

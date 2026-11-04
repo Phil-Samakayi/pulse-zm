@@ -53,6 +53,30 @@ defmodule PulseWeb.ReportControllerTest do
     end
   end
 
+  describe "alerts" do
+    test "a report that changes the status tells the place's followers", %{
+      conn: conn,
+      location: location
+    } do
+      follower = user_fixture()
+
+      {:ok, _} =
+        Pulse.Alerts.save_subscription(follower, %{
+          "endpoint" => "https://push.example/follower",
+          "keys" => %{"p256dh" => "public-key", "auth" => "secret"}
+        })
+
+      {:ok, _} = Pulse.Alerts.follow_location(follower, location)
+
+      post(conn, ~p"/locations/#{location.id}/outages", %{
+        "outage_report" => %{"utility" => "electricity", "status" => "down"}
+      })
+
+      expected_title = "Power is out in #{location.name}"
+      assert_received {:push, "https://push.example/follower", %{"title" => ^expected_title}}
+    end
+  end
+
   describe "outage form" do
     test "renders", %{conn: conn, location: location} do
       conn = get(conn, ~p"/locations/#{location.id}/report/outage")

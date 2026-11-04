@@ -131,6 +131,17 @@ defmodule PulseWeb.Router do
     post "/flag/:type/:report_id", ReportController, :create_flag
   end
 
+  # Alerts — saving this browser's push subscription (a fetch from
+  # assets/js/app.js) and following or unfollowing a location (tap-only
+  # forms on the location page). See Pulse.Alerts.
+  scope "/alerts", PulseWeb do
+    pipe_through [:browser, :require_login]
+
+    post "/subscriptions", PushSubscriptionController, :create
+    post "/locations/:location_id", AlertController, :follow_location
+    delete "/locations/:location_id", AlertController, :unfollow_location
+  end
+
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:pulse, :dev_routes) do
     # If you want to use the LiveDashboard in production, you should put

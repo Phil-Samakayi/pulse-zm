@@ -48,7 +48,10 @@ defmodule PulseWeb.ReportController do
         |> Map.put("reported_by_id", conn.assigns.current_user.id)
 
       case Reports.create_outage_report(attrs) do
-        {:ok, _report} ->
+        {:ok, report} ->
+          # Tells followers if this changes the status (in the
+          # background, so the reporter isn't kept waiting).
+          Pulse.Alerts.notify_outage_async(report)
           thank_and_return(conn, thanks)
 
         {:error, changeset} ->

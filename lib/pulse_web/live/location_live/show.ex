@@ -6,7 +6,8 @@ defmodule PulseWeb.LocationLive.Show do
 
   Nothing on this page writes through the LiveView socket. The one-tap
   outage buttons are ordinary HTML forms posting to
-  `PulseWeb.ReportController`, and "Add a note", "Report a price" and
+  `PulseWeb.ReportController`, "Get alerts" / "Turn off" post to
+  `PulseWeb.AlertController`, and "Add a note", "Report a price" and
   "Flag" link to ordinary controller-rendered pages. So reporting works
   even where the live connection can't stay up (Render's free plan —
   see the project's hosting notes): the page fully renders on the first
@@ -101,6 +102,12 @@ defmodule PulseWeb.LocationLive.Show do
             Report a price
           </.link>
         </p>
+
+        <.alert_toggle
+          :if={@alerts_enabled or @following}
+          location={@location}
+          following={@following}
+        />
       </section>
 
       <p
@@ -114,7 +121,7 @@ defmodule PulseWeb.LocationLive.Show do
         <.link href={~p"/users/register"} class="font-semibold text-copper-strong hover:underline">
           sign up
         </.link>
-        to report what's happening here.
+        to report what's happening here or get alerts when it changes.
       </p>
 
       <section class="mt-8">
@@ -153,6 +160,54 @@ defmodule PulseWeb.LocationLive.Show do
         </.report_list>
       </section>
     </div>
+    """
+  end
+
+  # "Get alerts" / "Alerts on · Turn off". Both are tap-only forms posting
+  # to PulseWeb.AlertController. The "Get alerts" form carries
+  # data-needs-push, so assets/js/app.js first asks for notification
+  # permission and saves this browser's push subscription, showing any
+  # problem in the data-push-status line, and only then submits it.
+  attr :location, :any, required: true
+  attr :following, :boolean, required: true
+
+  defp alert_toggle(%{following: true} = assigns) do
+    ~H"""
+    <.form
+      for={%{}}
+      action={~p"/alerts/locations/#{@location.id}"}
+      method="delete"
+      class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line pt-3 text-sm"
+    >
+      <span class="inline-flex items-center gap-1.5 font-semibold text-teal">
+        <.icon name="hero-bell-alert-mini" class="h-4 w-4" /> Alerts on
+      </span>
+      <button type="submit" class="text-ink-soft hover:text-copper-strong hover:underline">
+        Turn off
+      </button>
+    </.form>
+    """
+  end
+
+  defp alert_toggle(assigns) do
+    ~H"""
+    <.form
+      for={%{}}
+      action={~p"/alerts/locations/#{@location.id}"}
+      method="post"
+      data-needs-push="true"
+      class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line pt-3"
+    >
+      <button
+        type="submit"
+        class="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-sm font-semibold text-ink hover:border-copper hover:text-copper-strong"
+      >
+        <.icon name="hero-bell-mini" class="h-4 w-4" /> Get alerts for {@location.name}
+      </button>
+      <p data-push-status aria-live="polite" class="text-xs text-ink-soft">
+        A notification when power or water changes here.
+      </p>
+    </.form>
     """
   end
 
@@ -268,6 +323,10 @@ defmodule PulseWeb.LocationLive.Show do
       {:ok,
        socket
        |> assign(location: location, page_title: location.name)
+       |> assign(
+         following: Pulse.Alerts.following_location?(socket.assigns.current_user, location.id),
+         alerts_enabled: Pulse.Push.enabled?()
+       )
        |> assign_status()}
     else
       {:ok,
