@@ -14,10 +14,16 @@
       Installable app: "Add to Home Screen" opens Pulse full-screen with
       its own icon (priv/static/manifest.json, priv/static/images/icon-*).
       iPhones also need this before they'll show alerts.
+
+      manifest.json and favicon.ico are plain paths on purpose, not ~p:
+      in production ~p points static files at their digested name
+      (manifest-1e5e….json), and Plug.Static only serves the top-level
+      names listed in PulseWeb.static_paths/0, so those would 404. Files
+      inside images/ are fine either way.
     --%>
-    <link rel="manifest" href={~p"/manifest.json"} />
+    <link rel="manifest" href="/manifest.json" />
     <link rel="icon" href={~p"/images/icon.svg"} type="image/svg+xml" />
-    <link rel="icon" href={~p"/favicon.ico"} sizes="48x48" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="apple-touch-icon" href={~p"/images/apple-touch-icon.png"} />
     <meta name="theme-color" content="#ffffff" />
     <meta name="apple-mobile-web-app-title" content="Pulse" />
