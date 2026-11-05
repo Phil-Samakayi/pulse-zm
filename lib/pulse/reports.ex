@@ -9,7 +9,7 @@ defmodule Pulse.Reports do
 
   import Ecto.Query, warn: false
   alias Pulse.Repo
-  alias Pulse.Reports.{Location, OutageReport, PriceReport}
+  alias Pulse.Reports.{Location, OutageReport, PriceReport, Timeline}
 
   @duplicate_cooldown_minutes 2
 
@@ -303,6 +303,32 @@ defmodule Pulse.Reports do
     |> Map.new(fn {commodity, reports} ->
       {commodity, Enum.sort_by(reports, & &1.price_kwacha, Decimal)}
     end)
+  end
+
+  @doc """
+  What power and water have done at one location since `window_start`:
+  a timeline per utility, for the week-of-outages strip on the location
+  page. See `Pulse.Reports.Timeline` for how reports become stretches.
+
+  Returns `%{"electricity" => timeline, "water" => timeline}` with only the
+  utilities that have something known in the window. Flagged reports are
+  left out, the same as the "me too" counts.
+  """
+  def outage_timeline(location_id, %DateTime{} = window_start, %DateTime{} = now) do
+    since = DateTime.add(window_start, -Timeline.hold_seconds(), :second)
+
+    Repo.all(
+      from r in OutageReport,
+        where:
+          r.location_id == ^location_id and not r.is_flagged and r.reported_at >= ^since and
+            r.reported_at <= ^now,
+        order_by: [asc: r.reported_at, asc: r.id],
+        select: map(r, [:utility, :status, :reported_at])
+    )
+    |> Enum.group_by(& &1.utility)
+    |> Enum.map(fn {utility, reports} -> {utility, Timeline.build(reports, window_start, now)} end)
+    |> Enum.filter(fn {_utility, timeline} -> timeline.known? end)
+    |> Map.new()
   end
 
   ## Outage reports
