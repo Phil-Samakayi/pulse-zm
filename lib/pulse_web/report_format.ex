@@ -133,6 +133,54 @@ defmodule PulseWeb.ReportFormat do
     end
   end
 
+  @doc ~S|Weekday and clock time in Lusaka time: "Thu 18:20".|
+  def day_time(%DateTime{} = dt), do: dt |> to_lusaka() |> Calendar.strftime("%a %H:%M")
+
+  @doc ~S|A length of time, rounded: "45 min", "31 h".|
+  def duration(seconds) when is_integer(seconds) and seconds < 60 * 60,
+    do: "#{max(div(seconds, 60), 1)} min"
+
+  def duration(seconds) when is_integer(seconds), do: "#{div(seconds + 30 * 60, 60 * 60)} h"
+
+  @doc """
+  The week shown by the outage strip: from midnight six days ago to the
+  coming midnight, in Lusaka time, as `{start, stop}` in UTC. Seven whole
+  days, so each day gets an equal slice of the strip and today's ends at
+  the right edge.
+  """
+  def week_window(%DateTime{} = now) do
+    today = now |> to_lusaka() |> DateTime.to_date()
+
+    start =
+      today
+      |> Date.add(-6)
+      |> DateTime.new!(~T[00:00:00], "Etc/UTC")
+      |> DateTime.add(-@lusaka_offset_seconds, :second)
+
+    {start, DateTime.add(start, 7 * 24 * 60 * 60, :second)}
+  end
+
+  @doc ~S|Labels for the strip's seven days, oldest first: ["Thu", "Fri", …, "Today"].|
+  def week_days(%DateTime{} = window_start) do
+    for day <- 0..6 do
+      if day == 6,
+        do: "Today",
+        else: window_start |> DateTime.add(day * 24 * 60 * 60, :second) |> to_lusaka() |> Calendar.strftime("%a")
+    end
+  end
+
+  @doc """
+  What tapping a red stretch on the strip says: "Out 12 h · Thu 18:20 →
+  Fri 06:10", or "Out since Wed 10:55 · 3 h so far" while it's still out.
+  """
+  def outage_tip(%{from: from, to: to}, %DateTime{} = now) do
+    length = duration(DateTime.diff(to, from))
+
+    if DateTime.compare(to, now) == :eq,
+      do: "Out since #{day_time(from)} · #{length} so far",
+      else: "Out #{length} · #{day_time(from)} → #{day_time(to)}"
+  end
+
   @doc ~S|Full date and time in Lusaka time, for tooltips: "1 Oct 2026, 06:46 (Lusaka time)".|
   def full_time(%DateTime{} = dt),
     do: Calendar.strftime(to_lusaka(dt), "%-d %b %Y, %H:%M") <> " (Lusaka time)"

@@ -62,6 +62,33 @@ defmodule PulseWeb.ReportFormatTest do
     refute ReportFormat.recent?(~U[2026-10-30 07:00:00Z], @now)
   end
 
+  describe "the week-of-outages strip" do
+    test "week_window/1 is seven whole Lusaka days ending tonight" do
+      # @now is 10:00 on Mon 2 Nov in Lusaka; the week starts at 00:00 on
+      # Tue 27 Oct Lusaka time, which is 22:00 UTC on the 26th.
+      assert ReportFormat.week_window(@now) == {~U[2026-10-26 22:00:00Z], ~U[2026-11-02 22:00:00Z]}
+    end
+
+    test "week_days/1 names the days, with today last" do
+      {start, _stop} = ReportFormat.week_window(@now)
+      assert ReportFormat.week_days(start) == ["Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Today"]
+    end
+
+    test "duration/1 rounds to minutes or hours" do
+      assert ReportFormat.duration(20) == "1 min"
+      assert ReportFormat.duration(45 * 60) == "45 min"
+      assert ReportFormat.duration(31 * 3600 + 40 * 60) == "32 h"
+    end
+
+    test "outage_tip/2 gives the times, or 'so far' while still out" do
+      past = %{from: ~U[2026-10-29 16:20:00Z], to: ~U[2026-10-30 04:10:00Z]}
+      ongoing = %{from: ~U[2026-11-02 05:00:00Z], to: @now}
+
+      assert ReportFormat.outage_tip(past, @now) == "Out 12 h · Thu 18:20 → Fri 06:10"
+      assert ReportFormat.outage_tip(ongoing, @now) == "Out since Mon 07:00 · 3 h so far"
+    end
+  end
+
   describe "status_summary/3" do
     test "one sentence per utility, for link previews" do
       power = %OutageReport{utility: "electricity", status: "down", reported_at: ~U[2026-11-02 07:30:00Z]}
