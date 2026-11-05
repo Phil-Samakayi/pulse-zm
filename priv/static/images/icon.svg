@@ -1,4 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#a85c32"/>
-  <path d="M292 64 140 292h96l-28 156 164-236h-98z" fill="#fff4e4" stroke="#fff4e4" stroke-width="20" stroke-linejoin="round"/>
+  <defs>
+    <clipPath id="pin"><path d="M256 24C146 24 58 108 58 220c0 112 104 190 198 268 94-78 198-156 198-268C454 108 366 24 256 24z"/></clipPath>
+    <linearGradient id="flame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f7a21b"/><stop offset=".55" stop-color="#f05a1a"/><stop offset="1" stop-color="#d42a1a"/>
+    </linearGradient>
+  </defs>
+  <g clip-path="url(#pin)">
+    <rect width="512" height="512" fill="#159a3c"/>
+    <path d="M40 360C200 350 340 300 480 150V520H40z" fill="url(#flame)"/>
+  </g>
+  <g transform="skewX(-10) translate(40 0)">
+    <path fill-rule="evenodd" fill="#ffffff" d="M170 104h118c68 0 112 40 112 98s-44 98-112 98h-44l-14 98h-74zM250 162v82h34c27 0 44-16 44-41s-17-41-44-41z"/>
+  </g>
+  <path d="M138 246h86l20-40 28 84 24-60 14 16h74" fill="none" stroke="#0b5a22" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M138 246h86l20-40 28 84 24-60 14 16h74" fill="none" stroke="#ffc928" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

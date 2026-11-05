@@ -2,7 +2,8 @@
   <div class="flex items-center justify-between py-3 text-sm">
     <div class="flex items-center gap-2">
       <.link navigate={~p"/"} class="flex items-center gap-1.5 font-extrabold text-ink">
-        <span class="text-lg text-copper" aria-hidden="true">⚡</span> Pulse
+        <%!-- The flat logo: the detailed one (the app icons) blurs this small. --%>
+        <img src={~p"/images/icon.svg"} alt="" class="h-6 w-6" /> Pulse
       </.link>
       <span class="hidden text-ink-soft sm:inline">&middot; Zambia cost-of-living tracker</span>
     </div>
