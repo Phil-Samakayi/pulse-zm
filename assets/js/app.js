@@ -60,6 +60,21 @@ document.addEventListener("click", (event) => {
   if (close) close.closest("[data-flash]").remove()
 })
 
+// Week-of-outages strip (LocationLive.Show): tapping a red stretch shows
+// its times in the line under that strip. Plain JS on purpose, so it
+// works with or without the live connection.
+document.addEventListener("click", (event) => {
+  const stretch = event.target.closest("[data-strip-tip]")
+  if (!stretch) return
+
+  const strip = stretch.closest("[data-strip]")
+  strip.querySelectorAll("[data-strip-tip]").forEach((el) => el.removeAttribute("aria-pressed"))
+  stretch.setAttribute("aria-pressed", "true")
+
+  const readout = strip.querySelector("[data-strip-readout]")
+  if (readout) readout.textContent = stretch.dataset.stripTip
+})
+
 // Bottom tab bar (app.html.heex): mark the tab for the current page.
 // Done here rather than on the server so the same rule works on LiveView
 // and controller pages; re-run after every live navigation.

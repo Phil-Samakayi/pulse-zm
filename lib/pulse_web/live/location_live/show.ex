@@ -65,6 +65,8 @@ defmodule PulseWeb.LocationLive.Show do
         />
       </section>
 
+      <.week_strips :if={@week.timelines != %{}} week={@week} />
+
       <.alert_toggle
         :if={@current_user && (@alerts_enabled or @following)}
         location={@location}
@@ -320,6 +322,101 @@ defmodule PulseWeb.LocationLive.Show do
     """
   end
 
+  # The week-of-outages strip under the tiles: one bar per utility for the
+  # last seven days (Lusaka days, today at the right), red where it was
+  # out, teal where it was on, hatched where nobody reported (see
+  # Pulse.Reports.Timeline). Tapping a red stretch puts its times in the
+  # line underneath; that's plain JS in assets/js/app.js, so it works
+  # without the live connection. The line is phx-update="ignore" so a
+  # re-render doesn't wipe what was tapped.
+  attr :week, :map, required: true
+
+  defp week_strips(assigns) do
+    ~H"""
+    <section class="mt-3 rounded-lg border border-line bg-paper-raised p-3" aria-label="This week">
+      <div
+        :for={utility <- OutageReport.utilities()}
+        :if={@week.timelines[utility]}
+        data-strip
+        class="mt-4 first:mt-0"
+      >
+        <p class="flex items-baseline justify-between gap-2 text-xs font-semibold text-ink">
+          {utility_label(utility)} this week
+          <span class={["font-medium", if(out?(@week.timelines[utility]), do: "text-danger", else: "text-teal")]}>
+            {if out?(@week.timelines[utility]),
+              do: "Out #{duration(@week.timelines[utility].out_seconds)}",
+              else: "No outages reported"}
+          </span>
+        </p>
+        <div class="relative mt-1.5 h-5 overflow-hidden rounded-md border border-line bg-paper">
+          <.strip_segment :for={seg <- @week.timelines[utility].segments} seg={seg} week={@week} />
+        </div>
+        <div class="mt-1 grid grid-cols-7 text-center text-[10px] text-ink-soft" aria-hidden="true">
+          <span :for={day <- @week.days}>{day}</span>
+        </div>
+        <p
+          :if={out?(@week.timelines[utility])}
+          id={"strip-readout-#{utility}"}
+          phx-update="ignore"
+          data-strip-readout
+          class="mt-1 text-xs text-ink-soft"
+        >
+          Tap a red stretch to see when.
+        </p>
+      </div>
+
+      <p class="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-ink-soft" aria-hidden="true">
+        <span><span class="mr-1 inline-block h-2 w-3 rounded-sm bg-danger"></span>Out</span>
+        <span><span class="mr-1 inline-block h-2 w-3 rounded-sm bg-teal opacity-40"></span>On</span>
+        <span><span class="strip-unknown mr-1 inline-block h-2 w-3 rounded-sm"></span>No reports</span>
+      </p>
+    </section>
+    """
+  end
+
+  attr :seg, :map, required: true
+  attr :week, :map, required: true
+
+  defp strip_segment(%{seg: %{status: "down"}} = assigns) do
+    ~H"""
+    <button
+      type="button"
+      data-strip-tip={outage_tip(@seg, @week.now)}
+      aria-label={outage_tip(@seg, @week.now)}
+      class="absolute inset-y-0 bg-danger"
+      style={segment_style(@seg, @week, "6px")}
+    >
+    </button>
+    """
+  end
+
+  defp strip_segment(%{seg: %{status: :unknown}} = assigns) do
+    ~H"""
+    <div class="strip-unknown absolute inset-y-0" style={segment_style(@seg, @week, "0")}></div>
+    """
+  end
+
+  defp strip_segment(assigns) do
+    ~H"""
+    <div class="absolute inset-y-0 bg-teal opacity-40" style={segment_style(@seg, @week, "0")}></div>
+    """
+  end
+
+  # Position and width as a share of the whole week. A short outage still
+  # gets a few pixels, so it can be seen and tapped.
+  defp segment_style(seg, week, min_width) do
+    total = DateTime.diff(week.stop, week.start)
+    left = DateTime.diff(seg.from, week.start) / total * 100
+    width = DateTime.diff(seg.to, seg.from) / total * 100
+
+    "left:#{percent(left)};width:#{percent(width)};min-width:#{min_width}"
+  end
+
+  defp percent(value), do: :erlang.float_to_binary(value * 1.0, decimals: 3) <> "%"
+
+  # Any red at all, even an outage reported seconds ago.
+  defp out?(timeline), do: Enum.any?(timeline.segments, &(&1.status == "down"))
+
   defp tile_class(:out), do: "bg-danger-bg text-danger"
   defp tile_class(:on), do: "bg-teal-bg text-teal"
   defp tile_class(:stale), do: "border border-line bg-paper-raised text-ink-soft"
@@ -412,7 +509,18 @@ defmodule PulseWeb.LocationLive.Show do
         now
       )
 
+    {week_start, week_stop} = week_window(now)
+
+    week = %{
+      start: week_start,
+      stop: week_stop,
+      now: now,
+      days: week_days(week_start),
+      timelines: Reports.outage_timeline(location.id, week_start, now)
+    }
+
     assign(socket,
+      week: week,
       og_description: status_summary(status.latest_outages, runs, now),
       latest_outages: status.latest_outages,
       latest_prices: status.latest_prices,

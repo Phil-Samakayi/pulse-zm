@@ -78,6 +78,17 @@ defmodule PulseWeb.LocationLive.ShowTest do
     assert tiles =~ "Nobody has reported here yet"
   end
 
+  test "shows this week's outages as a strip you can tap", %{conn: conn, location: location} do
+    {:ok, view, _html} = live(conn, ~p"/locations/#{location.id}")
+
+    week = view |> element("section[aria-label='This week']") |> render()
+
+    assert week =~ "Power this week"
+    assert week =~ ~s(data-strip-tip="Out since)
+    assert week =~ "Tap a red stretch to see when."
+    refute week =~ "Water this week"
+  end
+
   test "a report from days ago reads as no recent report", %{conn: conn} do
     location = location_fixture()
 
