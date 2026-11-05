@@ -133,6 +133,9 @@ defmodule PulseWeb.ReportFormat do
     end
   end
 
+  @doc "The date in Lusaka at that moment (which may be a day after the UTC date)."
+  def lusaka_date(%DateTime{} = dt), do: dt |> to_lusaka() |> DateTime.to_date()
+
   @doc ~S|Weekday and clock time in Lusaka time: "Thu 18:20".|
   def day_time(%DateTime{} = dt), do: dt |> to_lusaka() |> Calendar.strftime("%a %H:%M")
 

@@ -30,6 +30,11 @@ defmodule PulseWeb.ReportFormatTest do
     end
   end
 
+  test "lusaka_date/1 rolls over at Lusaka midnight, not UTC midnight" do
+    assert ReportFormat.lusaka_date(~U[2026-11-01 21:59:00Z]) == ~D[2026-11-01]
+    assert ReportFormat.lusaka_date(~U[2026-11-01 22:00:00Z]) == ~D[2026-11-02]
+  end
+
   test "full_time/1 is in Lusaka time" do
     assert ReportFormat.full_time(~U[2026-10-01 04:46:00Z]) == "1 Oct 2026, 06:46 (Lusaka time)"
   end
