@@ -331,6 +331,27 @@ defmodule Pulse.Reports do
     |> Map.new()
   end
 
+  @doc """
+  Every report of `commodity` in its standard unit at an approved location
+  since `since`, oldest first, with its location — what the price trend
+  line on an item's page is drawn from (`PulseWeb.PriceTrend`). Flagged
+  reports are left out, as on the price board.
+  """
+  def price_history(commodity, %DateTime{} = since) do
+    unit = PriceReport.standard_unit(commodity)
+    approved = Location.approved()
+
+    Repo.all(
+      from r in PriceReport,
+        join: l in assoc(r, :location),
+        where:
+          r.commodity == ^commodity and r.unit == ^unit and l.status == ^approved and
+            not r.is_flagged and r.reported_at >= ^since,
+        order_by: [asc: r.reported_at, asc: r.id],
+        preload: [location: l]
+    )
+  end
+
   ## Outage reports
 
   def create_outage_report(attrs) do
