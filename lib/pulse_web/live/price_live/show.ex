@@ -5,6 +5,11 @@ defmodule PulseWeb.PriceLive.Show do
   more each one costs than the cheapest, and a WhatsApp share of the
   whole list. Data from `Pulse.Reports.price_board/1`.
 
+  Below the list, the cheapest price each week over the last eight weeks
+  as a line (`PulseWeb.PriceTrend`, from `Pulse.Reports.price_history/2`).
+  Tapping a week shows its price and market in the line above the chart;
+  that's plain JS in assets/js/app.js.
+
   Display only, like `PulseWeb.PriceLive.Index`, so it works without the
   live connection.
   """
@@ -24,6 +29,7 @@ defmodule PulseWeb.PriceLive.Show do
 
   alias Pulse.Reports
   alias Pulse.Reports.PriceReport
+  alias PulseWeb.PriceTrend
 
   def render(assigns) do
     ~H"""
@@ -97,6 +103,81 @@ defmodule PulseWeb.PriceLive.Show do
           </div>
         </li>
       </ul>
+
+      <section
+        class="mt-6 rounded-lg border border-line bg-paper-raised p-4"
+        aria-label="Price trend"
+        data-trend
+      >
+        <p class="font-semibold text-ink">Cheapest each week</p>
+        <p class="text-xs text-ink-soft">Last {PriceTrend.weeks()} weeks</p>
+
+        <p :if={!@trend} class="mt-3 text-sm text-ink-soft">
+          Not enough prices yet for a trend. The line appears once there are prices from two
+          different weeks.
+        </p>
+
+        <div :if={@trend}>
+          <p data-trend-readout class="mt-2 min-h-[1.25rem] text-sm text-ink">{@trend.summary}</p>
+          <svg
+            viewBox={"0 0 #{@trend.width} #{@trend.height}"}
+            class="mt-2 block h-auto w-full overflow-visible"
+            role="img"
+            aria-label={@trend.summary}
+          >
+            <g :for={label <- @trend.y_labels}>
+              <line
+                x1={@trend.left}
+                x2={@trend.right}
+                y1={label.y}
+                y2={label.y}
+                class="stroke-line"
+                stroke-dasharray="3 3"
+              />
+              <text x={@trend.left - 6} y={label.y + 3} text-anchor="end" font-size="9" class="fill-ink-soft">
+                {label.text}
+              </text>
+            </g>
+            <text
+              :for={label <- @trend.x_labels}
+              x={label.x}
+              y={@trend.height - 6}
+              text-anchor={label.anchor}
+              font-size="9"
+              class="fill-ink-soft"
+            >
+              {label.text}
+            </text>
+            <polyline
+              points={@trend.line}
+              fill="none"
+              class="stroke-teal"
+              stroke-width="2.5"
+              stroke-linejoin="round"
+              stroke-linecap="round"
+            />
+            <g :for={dot <- @trend.dots}>
+              <circle
+                cx={dot.x}
+                cy={dot.y}
+                r={if dot.latest, do: 5, else: 3.5}
+                class={["stroke-teal", if(dot.latest, do: "fill-teal", else: "fill-paper-raised")]}
+                stroke-width="2"
+              />
+              <%!-- A wide, invisible tap target over each week's point. --%>
+              <rect
+                x={dot.x - 16}
+                y={@trend.plot_top}
+                width="32"
+                height={@trend.plot_height}
+                fill="transparent"
+                class="cursor-pointer"
+                data-trend-tip={dot.tip}
+              />
+            </g>
+          </svg>
+        </div>
+      </section>
     </div>
     """
   end
@@ -128,7 +209,16 @@ defmodule PulseWeb.PriceLive.Show do
   def handle_info(:tick, socket), do: {:noreply, assign(socket, now: DateTime.utc_now())}
 
   defp assign_reports(socket) do
-    reports = Map.get(Reports.price_board(), socket.assigns.commodity, [])
-    assign(socket, reports: reports, now: DateTime.utc_now())
+    commodity = socket.assigns.commodity
+    now = DateTime.utc_now()
+    reports = Map.get(Reports.price_board(), commodity, [])
+
+    trend =
+      commodity
+      |> Reports.price_history(PriceTrend.window_start(now))
+      |> PriceTrend.weekly(now)
+      |> PriceTrend.chart(now)
+
+    assign(socket, reports: reports, trend: trend, now: now)
   end
 end

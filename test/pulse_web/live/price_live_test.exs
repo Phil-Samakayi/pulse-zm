@@ -74,6 +74,30 @@ defmodule PulseWeb.PriceLiveTest do
       assert html =~ "https://wa.me/?text=%2AMealie%20meal%20%2825kg%20bag%29%2A"
     end
 
+    test "says when there aren't enough weeks for a trend yet", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/prices/mealie_meal")
+      assert html =~ "Not enough prices yet for a trend"
+    end
+
+    test "draws the trend once two weeks have prices", %{conn: conn, cheap: cheap} do
+      %Pulse.Reports.PriceReport{
+        location_id: cheap.id,
+        commodity: "mealie_meal",
+        unit: "25kg bag",
+        price_kwacha: Decimal.new("440.00"),
+        reported_at: DateTime.utc_now() |> DateTime.add(-21 * 24 * 60 * 60, :second) |> DateTime.truncate(:second)
+      }
+      |> Pulse.Repo.insert!()
+
+      {:ok, view, _html} = live(conn, ~p"/prices/mealie_meal")
+      trend = view |> element("section[aria-label='Price trend']") |> render()
+
+      assert trend =~ "<polyline"
+      assert trend =~ "K420.00 at Cheap Market"
+      assert trend =~ "down K20.00 since week of"
+      assert trend =~ ~s(data-trend-tip=)
+    end
+
     test "an unknown item goes back to Compare prices", %{conn: conn} do
       assert {:error, {:live_redirect, %{to: "/prices"}}} = live(conn, ~p"/prices/caviar")
     end

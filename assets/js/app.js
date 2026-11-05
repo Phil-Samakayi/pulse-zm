@@ -75,6 +75,16 @@ document.addEventListener("click", (event) => {
   if (readout) readout.textContent = stretch.dataset.stripTip
 })
 
+// Price trend line (PriceLive.Show): tapping a week puts its price and
+// market in the line above the chart.
+document.addEventListener("click", (event) => {
+  const week = event.target.closest("[data-trend-tip]")
+  if (!week) return
+
+  const readout = week.closest("[data-trend]").querySelector("[data-trend-readout]")
+  if (readout) readout.textContent = week.getAttribute("data-trend-tip")
+})
+
 // Bottom tab bar (app.html.heex): mark the tab for the current page.
 // Done here rather than on the server so the same rule works on LiveView
 // and controller pages; re-run after every live navigation.
